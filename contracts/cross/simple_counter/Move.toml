@@ -1,5 +1,5 @@
 [package]
-name = "Closed Loop Token"
+name = "simple_counter"
 version = "0.0.1"
 edition = "2024.beta"
 
@@ -7,4 +7,4 @@ edition = "2024.beta"
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 
 [addresses]
-governance_module = "0x0"
+simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"

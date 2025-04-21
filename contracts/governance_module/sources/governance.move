@@ -1,18 +1,17 @@
 module governance_module::governance {
     use std::string::{Self, String};
     use sui::table::{Self, Table};
-    use sui::tx_context::{Self, TxContext, sender};
+    use sui::tx_context::{sender};
     use sui::vec_map::{Self, VecMap};
     use sui::event;
     use sui::dynamic_field as df;
-    use sui::object::{Self, ID, UID};
-    use sui::transfer;
-    use std::option::{Self, Option};
     use sui::coin::{Self, Coin};
     
     // Import the govtoken module
-    use governance_module::govtoken::{Self, GOVTOKEN};
+    use governance_module::govtoken::{GOVTOKEN};
 
+    use simple_counter::simple_counter::{Self, Counter};
+    
     /// Error constants
     const EInsufficientVotingPower: u64 = 1;
     const EProposalNotActive: u64 = 2;
@@ -69,8 +68,6 @@ module governance_module::governance {
         title: String,
         /// Description of the proposal
         description: String,
-        /// Optional link to additional details
-        url: Option<String>,
         /// Current status of the proposal
         status: u8,
         /// Vote counts
@@ -151,8 +148,8 @@ module governance_module::governance {
     
     /// Update the total token supply (for quorum calculations)
     public entry fun update_total_supply(
-        self: &mut GovernanceSystem,
         _admin_cap: &GovernanceAdminCap,
+        self: &mut GovernanceSystem,
         new_supply: u64,
     ) {
         self.total_token_supply = new_supply;
@@ -160,8 +157,8 @@ module governance_module::governance {
     
     /// Update the admin address
     public entry fun update_admin(
-        self: &mut GovernanceSystem,
         _admin_cap: &GovernanceAdminCap,
+        self: &mut GovernanceSystem,
         new_admin: address,
     ) {
         self.admin = new_admin;
@@ -175,8 +172,7 @@ module governance_module::governance {
         governance_coins: &Coin<GOVTOKEN>,
         title: String,
         description: String,
-        url: Option<String>,
-        voting_period_days: u64,
+        voting_period_seconds: u64,
         ctx: &mut TxContext,
     ): ID {
         // Ensure the coin owner has enough tokens to create a proposal
@@ -187,7 +183,7 @@ module governance_module::governance {
 
         let creator = sender(ctx);
         let now = tx_context::epoch(ctx);
-        let voting_ends_at = now + (voting_period_days * 86400); // Convert days to seconds (approximate)
+        let voting_ends_at = now + voting_period_seconds;
 
         let proposal_uid = object::new(ctx);
         let proposal_id = object::uid_to_inner(&proposal_uid);
@@ -197,7 +193,6 @@ module governance_module::governance {
             creator,
             title,
             description,
-            url,
             status: PROPOSAL_STATUS_ACTIVE,
             yes_votes: 0,
             no_votes: 0,
@@ -360,33 +355,37 @@ module governance_module::governance {
     
     /// Mark a proposal as executed (only works for passed proposals)
     public entry fun execute_proposal(
-        self: &mut GovernanceSystem,
-        proposal_id: ID,
-        ctx: &mut TxContext,
+    self: &mut GovernanceSystem,
+    proposal_id: ID,
+    counter: &mut Counter,
+    new_value: u64,
+    ctx: &mut TxContext,
     ) {
-        // Check that proposal exists
+        // Ensure proposal exists
         assert!(table::contains(&self.proposals, proposal_id), EProposalNotFound);
         let proposal = table::borrow_mut(&mut self.proposals, proposal_id);
-        
-        // Check if proposal passed
+
+        // Ensure proposal passed
         assert!(proposal.status == PROPOSAL_STATUS_PASSED, EProposalNotFinalized);
-        
-        // Mark as executed
+
+        // Set proposal to executed
         proposal.status = PROPOSAL_STATUS_EXECUTED;
-        
-        // Emit execution event
+
+        // ✅ Set counter value by calling external module
+        simple_counter::set_value(counter, new_value);
+
+        // Emit events
         event::emit(ProposalExecuted {
             proposal_id,
             executor: sender(ctx),
         });
-        
-        // Emit status change event
+
         event::emit(ProposalStatusChanged {
             proposal_id,
             new_status: PROPOSAL_STATUS_EXECUTED,
         });
     }
-    
+
     // === Proposal data storage ===
     
     /// Add execution data to a proposal using dynamic fields
@@ -414,7 +413,7 @@ module governance_module::governance {
     /// Helper to create a unique key for dynamic fields
     fun combine_key(id: ID, key: String): vector<u8> {
         let mut result = object::id_to_bytes(&id);
-        let key_bytes = *string::bytes(&key);
+        let key_bytes = *string::as_bytes(&key);
         
         let mut i = 0;
         let len = vector::length(&key_bytes);
@@ -452,14 +451,13 @@ module governance_module::governance {
     public fun get_proposal_details(
         self: &GovernanceSystem,
         proposal_id: ID,
-    ): (address, String, String, Option<String>, u64, u64) {
+    ): (address, String, String, u64, u64) {
         assert!(table::contains(&self.proposals, proposal_id), EProposalNotFound);
         let proposal = table::borrow(&self.proposals, proposal_id);
         (
             proposal.creator,
             proposal.title,
             proposal.description,
-            proposal.url,
             proposal.created_at,
             proposal.voting_ends_at
         )
