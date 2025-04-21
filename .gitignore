@@ -1,0 +1,42 @@
+# Ignore build output
+/build/
+**/build/
+*/build/
+
+# Ignore Move bytecode files
+*.mv
+
+# Ignore .package files created by Move
+Move.toml.lock
+Move.lock
+*.bcs
+
+# Ignore target directories
+/target/
+/**/target/
+
+# Ignore package-specific metadata
+.DS_Store
+.idea/
+*.iml
+
+# Ignore test output
+/tests/output/
+**/tests/output/
+
+# Ignore logs or temporary files
+*.log
+*.tmp
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore SUI-specific cache or temporary folders (if any)
+.sui/
+
+# Ignore node_modules if using front-end integrations
+node_modules/
+
+# Ignore Rust specific files (if you're using Rust for extensions)
+Cargo.lock
+Cargo.toml.orig
