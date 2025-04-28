@@ -3,7 +3,7 @@ import { Github, Twitter, Waves } from "lucide-react";
 export function Footer() {
   return (
     <footer className="w-full border-t border-border bg-white dark:bg-gray-900 py-6">
-      <div className="container px-4 md:px-6">
+      <div className="container px-4 md:px-6  mx-auto">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="flex flex-col gap-2">
             <a href="/" className="flex items-center gap-2">

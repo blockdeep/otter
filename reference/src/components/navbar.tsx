@@ -49,6 +49,7 @@ export function Navbar() {
           </a>
         </nav>
         <div className="hidden md:flex gap-4">
+          <ConnectButton />
           <Button asChild className="bg-blue-600 hover:bg-blue-700">
             <a href="#">Launch Governance</a>
           </Button>
@@ -96,6 +97,8 @@ export function Navbar() {
             </a>
           </nav>
           <div className="flex flex-col gap-2 mt-4">
+            <ConnectButton />
+
             <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
               <a href="#">Launch Governance</a>
             </Button>
