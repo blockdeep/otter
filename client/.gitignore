@@ -1,51 +1,27 @@
-# Node modules
-node_modules/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Build output
-dist/
-build/
+# dependencies
+/node_modules
 
-# Vite cache
-.vite/
+# next.js
+/.next/
+/out/
 
-# Logs
-*.log
+# production
+/build
+
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+.pnpm-debug.log*
 
-# Diagnostic reports (Node.js)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# env files
+.env*
 
-# Environment variables
-.env
-.env.*.local
-.env.local
+# vercel
+.vercel
 
-# OS specific
-.DS_Store
-Thumbs.db
-
-# Editor folders and files
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# TypeScript
+# typescript
 *.tsbuildinfo
-
-# Coverage directory used by testing tools
-coverage/
-
-# Optional: lockfile for yarn or pnpm if not used
-# yarn.lock
-# pnpm-lock.yaml
-
-# Web3/sui-specific (if applicable)
-.cache/               # Some web3 tools like Hardhat might use this
-.sui/                 # Sui-specific temp dirs (customize based on your setup)
-artifacts/            # E.g., smart contract build artifacts if included
+next-env.d.ts
