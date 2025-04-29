@@ -8,6 +8,7 @@ import { prisma } from '../db';
 import { getClient } from '../sui-utils';
 import { handleEscrowObjects } from './escrow-handler';
 import { handleLockObjects } from './locked-handler';
+import { handleGovernanceObjects } from './governance-handler';
 
 type SuiEventsCursor = EventId | null | undefined;
 
@@ -43,6 +44,16 @@ const EVENTS_TO_TRACK: EventTracker[] = [
 			},
 		},
 		callback: handleEscrowObjects,
+	},
+	{
+		type: `${CONFIG.SIMPLE_GOVERNANCE_CONTRACT.packageId}::governance`,
+		filter: {
+			MoveEventModule: {
+				module: 'governance',
+				package: CONFIG.SIMPLE_GOVERNANCE_CONTRACT.packageId,
+			},
+		},
+		callback: handleGovernanceObjects,
 	},
 ];
 

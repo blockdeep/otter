@@ -17,12 +17,12 @@ datasource db {
 model Locked {
   // Keeping an ID so we can use as a pagination cursor
   // There's an issue with BigInt for sqlite, so we're using a plain ID.
-  id Int @id @default(autoincrement())
-  objectId String @unique
-  keyId String?
-  creator String?
-  itemId String?
-  deleted Boolean @default(false)
+  id       Int     @id @default(autoincrement())
+  objectId String  @unique
+  keyId    String?
+  creator  String?
+  itemId   String?
+  deleted  Boolean @default(false)
 
   @@index([creator])
   @@index([deleted])
@@ -32,22 +32,51 @@ model Locked {
 model Escrow {
   // Keeping an ID so we can use as a pagination cursor
   // There's an issue with BigInt for sqlite, so we're using a plain ID.
-  id Int @id @default(autoincrement())
-  objectId String @unique
-  sender String?
+  id        Int     @id @default(autoincrement())
+  objectId  String  @unique
+  sender    String?
   recipient String?
-  keyId String?
-  itemId String?
-  swapped Boolean @default(false)
+  keyId     String?
+  itemId    String?
+  swapped   Boolean @default(false)
   cancelled Boolean @default(false)
-  
+
   @@index([recipient])
   @@index([sender])
 }
 
+model Proposal {
+  // Keeping an ID so we can use as a pagination cursor
+  // There's an issue with BigInt for sqlite, so we're using a plain ID.
+  id Int @id @default(autoincrement())
+  objectId  String  @unique
+  creator    String?
+  title    String?
+  status Int?
+  votingEndsAt    Int?
+  threshold    Int?
+  yes    Int?
+  no    Int?
+  abstain    Int?
+  votes Vote[]
+  executed Boolean @default(false)
+}
+
+model Vote {
+  id           Int      @id @default(autoincrement())
+  proposalId   String   // Foreign key to match proposal_id in VoteCasted
+  voter        String
+  voteType     Int      // 0 = yes, 1 = no, 2 = abstain
+  votingPower  Int      // Assuming voting_power is an integer
+  
+  proposal     Proposal @relation(fields: [proposalId], references: [objectId])
+  
+  @@unique([proposalId, voter]) // Ensures each voter can only vote once per proposal
+}
+
 /// Saves the latest cursor for a given key.
 model Cursor {
-  id String @id
+  id       String @id
   eventSeq String
   txDigest String
 }
