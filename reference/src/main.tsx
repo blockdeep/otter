@@ -10,11 +10,26 @@ import App from "./App.tsx";
 import { networkConfig } from "./networkConfig.ts";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import "./index.css";
+import GovernancePage from "./governance/page.tsx";
+import ProposalsPage from "./governance/[app]/proposals/page.tsx";
+import ProposalDetailsPage from "./governance/[app]/proposals/[proposalId]/page.tsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+  },
+  {
+    path: "/governance",
+    element: <GovernancePage />,
+  },
+  {
+    path: "/governance/:app/proposals",
+    element: <ProposalsPage />,
+  },
+  {
+    path: "/governance/:app/proposals/:proposalId",
+    element: <ProposalDetailsPage />,
   },
 ]);
 

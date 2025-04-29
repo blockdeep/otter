@@ -11,18 +11,20 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
-        <a href="/" className="flex items-center gap-2">
-          <img
-            src="/logo.png"
-            alt="DUGONG Logo"
-            width={24}
-            height={24}
-            className="h-6 w-6"
-          />
-          <span className="text-xl font-bold">DUGONG</span>
-        </a>
-        <nav className="hidden md:flex gap-6">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6 mx-auto">
+        <div className="w-1/4">
+          <a href="/" className="flex items-center gap-2">
+            <img
+              src="/logo.png"
+              alt="DUGONG Logo"
+              width={24}
+              height={24}
+              className="h-6 w-6"
+            />
+            <span className="text-xl font-bold">DUGONG</span>
+          </a>
+        </div>
+        <nav className="hidden md:flex gap-6  justify-center flex-1">
           <a
             href="/"
             className="text-sm font-medium hover:text-blue-600 transition-colors"
@@ -48,7 +50,7 @@ export function Navbar() {
             About
           </a>
         </nav>
-        <div className="hidden md:flex gap-4">
+        <div className="hidden md:flex gap-4 justify-end w-1/4">
           <ConnectButton />
           <Button asChild className="bg-blue-600 hover:bg-blue-700">
             <a href="#">Launch Governance</a>
