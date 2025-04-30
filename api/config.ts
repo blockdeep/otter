@@ -23,7 +23,5 @@ export const CONFIG = {
 	POLLING_INTERVAL_MS: 1000,
 	DEFAULT_LIMIT: 50,
 	NETWORK: (process.env.NETWORK as Network) || 'testnet',
-	SWAP_CONTRACT: parseConfigurationFile('escrow-contract'),
-	DEMO_CONTRACT: parseConfigurationFile('demo-contract'),
 	SIMPLE_GOVERNANCE_CONTRACT: parseConfigurationFile('simple-governance')
 };

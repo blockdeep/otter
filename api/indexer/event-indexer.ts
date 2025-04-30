@@ -26,26 +26,6 @@ type EventTracker = {
 
 const EVENTS_TO_TRACK: EventTracker[] = [
 	{
-		type: `${CONFIG.SWAP_CONTRACT.packageId}::lock`,
-		filter: {
-			MoveEventModule: {
-				module: 'lock',
-				package: CONFIG.SWAP_CONTRACT.packageId,
-			},
-		},
-		callback: handleLockObjects,
-	},
-	{
-		type: `${CONFIG.SWAP_CONTRACT.packageId}::shared`,
-		filter: {
-			MoveEventModule: {
-				module: 'shared',
-				package: CONFIG.SWAP_CONTRACT.packageId,
-			},
-		},
-		callback: handleEscrowObjects,
-	},
-	{
 		type: `${CONFIG.SIMPLE_GOVERNANCE_CONTRACT.packageId}::governance`,
 		filter: {
 			MoveEventModule: {

@@ -15,15 +15,15 @@ type ProposalCreated = {
   proposal_id: string;
   creator: string;
   title: String;
-  voting_ends_at: number;
-  threshold: number;
+  voting_ends_at: string;
+  threshold: string;
 };
 
 type VoteCasted = {
   proposal_id: string;
   voter: string;
   vote_type: number; // 0 = yes, 1 = no, 2 = abstain
-  voting_power: number;
+  voting_power: string;
 };
 
 type ProposalStatusChanged = {
@@ -47,7 +47,7 @@ export const handleGovernanceObjects = async (
   events: SuiEvent[],
   type: string
 ) => {
-  const updates: Record<string, Prisma.EscrowCreateInput> = {};
+  const updates: Record<string, Prisma.ProposalCreateInput> = {};
 
   for (const event of events) {
     if (!event.type.startsWith(type))
@@ -87,7 +87,6 @@ export const handleGovernanceObjects = async (
         voter: data.voter,
         voteType: data.vote_type,
         votingPower: data.voting_power,
-        proposalId: data.proposal_id,
       });
 
       // Update the vote count based on vote_type

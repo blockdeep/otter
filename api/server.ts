@@ -19,72 +19,97 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', async (req, res) => {
-	return res.send({ message: '🚀 API is functional 🚀' });
+	res.send({ message: '🚀 API is functional 🚀' });
 });
 
-app.get('/locked', async (req, res) => {
+// app.get('/locked', async (req, res) => {
+// 	const acceptedQueries: WhereParam[] = [
+// 		{
+// 			key: 'deleted',
+// 			type: WhereParamTypes.BOOLEAN,
+// 		},
+// 		{
+// 			key: 'creator',
+// 			type: WhereParamTypes.STRING,
+// 		},
+// 		{
+// 			key: 'keyId',
+// 			type: WhereParamTypes.STRING,
+// 		},
+// 		{
+// 			key: 'objectId',
+// 			type: WhereParamTypes.STRING,
+// 		},
+// 	];
+
+// 	try {
+// 		const locked = await prisma.locked.findMany({
+// 			where: parseWhereStatement(req.query, acceptedQueries)!,
+// 			...parsePaginationForQuery(req.query),
+// 		});
+
+// 		return res.send(formatPaginatedResponse(locked));
+// 	} catch (e) {
+// 		console.error(e);
+// 		return res.status(400).send(e);
+// 	}
+// });
+
+// app.get('/escrows', async (req, res) => {
+// 	const acceptedQueries: WhereParam[] = [
+// 		{
+// 			key: 'cancelled',
+// 			type: WhereParamTypes.BOOLEAN,
+// 		},
+// 		{
+// 			key: 'swapped',
+// 			type: WhereParamTypes.BOOLEAN,
+// 		},
+// 		{
+// 			key: 'recipient',
+// 			type: WhereParamTypes.STRING,
+// 		},
+// 		{
+// 			key: 'sender',
+// 			type: WhereParamTypes.STRING,
+// 		},
+// 	];
+
+// 	try {
+// 		const escrows = await prisma.escrow.findMany({
+// 			where: parseWhereStatement(req.query, acceptedQueries)!,
+// 			...parsePaginationForQuery(req.query),
+// 		});
+
+// 		return res.send(formatPaginatedResponse(escrows));
+// 	} catch (e) {
+// 		console.error(e);
+// 		return res.status(400).send(e);
+// 	}
+// });
+
+app.get('/proposals', async (req, res) => {
 	const acceptedQueries: WhereParam[] = [
 		{
-			key: 'deleted',
+			key: 'executed',
 			type: WhereParamTypes.BOOLEAN,
 		},
 		{
 			key: 'creator',
 			type: WhereParamTypes.STRING,
 		},
-		{
-			key: 'keyId',
-			type: WhereParamTypes.STRING,
-		},
-		{
-			key: 'objectId',
-			type: WhereParamTypes.STRING,
-		},
 	];
 
 	try {
-		const locked = await prisma.locked.findMany({
+		const escrows = await prisma.proposal.findMany({
 			where: parseWhereStatement(req.query, acceptedQueries)!,
 			...parsePaginationForQuery(req.query),
 		});
 
-		return res.send(formatPaginatedResponse(locked));
+		res.send(formatPaginatedResponse(escrows));
 	} catch (e) {
 		console.error(e);
-		return res.status(400).send(e);
-	}
-});
-
-app.get('/escrows', async (req, res) => {
-	const acceptedQueries: WhereParam[] = [
-		{
-			key: 'cancelled',
-			type: WhereParamTypes.BOOLEAN,
-		},
-		{
-			key: 'swapped',
-			type: WhereParamTypes.BOOLEAN,
-		},
-		{
-			key: 'recipient',
-			type: WhereParamTypes.STRING,
-		},
-		{
-			key: 'sender',
-			type: WhereParamTypes.STRING,
-		},
-	];
-
-	try {
-		const escrows = await prisma.escrow.findMany({
-			where: parseWhereStatement(req.query, acceptedQueries)!,
-			...parsePaginationForQuery(req.query),
-		});
-
-		return res.send(formatPaginatedResponse(escrows));
-	} catch (e) {
-		console.error(e);
-		return res.status(400).send(e);
+		res.status(400).send(e);
 	}
 });
 

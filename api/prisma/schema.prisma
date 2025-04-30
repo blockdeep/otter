@@ -53,8 +53,8 @@ model Proposal {
   creator    String?
   title    String?
   status Int?
-  votingEndsAt    Int?
-  threshold    Int?
+  votingEndsAt    String?
+  threshold    String?
   yes    Int?
   no    Int?
   abstain    Int?
@@ -67,7 +67,7 @@ model Vote {
   proposalId   String   // Foreign key to match proposal_id in VoteCasted
   voter        String
   voteType     Int      // 0 = yes, 1 = no, 2 = abstain
-  votingPower  Int      // Assuming voting_power is an integer
+  votingPower  String      // Assuming voting_power is an integer
   
   proposal     Proposal @relation(fields: [proposalId], references: [objectId])
   

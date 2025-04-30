@@ -5,7 +5,7 @@
 
 ```bash
 export COUNTER_PACKAGE_ID=0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd
-export GOVERNANCE_PACKAGE_ID=0x25fd4d4c5c000529399e79a97a4c5038a3b8a0fcef4870e4e8bf56d020e9d102
+export GOVERNANCE_PACKAGE_ID=0x78f3c755b1d906864e4721dc887e59127553149a6f066acb45f6e37524925186
 
 ```
 
@@ -24,7 +24,7 @@ P.S: Note down the object created - this will be our counter object.
 
 In my case
 ```bash
-export COUNTER_OBJECT=0xdf3edde32fbb824967e806550539105f0a6e7ea8d47592dc89202f42374c00a0
+export COUNTER_OBJECT=0x0f0718e4e590bcf85e02f44f412fef11a31a7ae67fb37fb21266fea95b1ae49c
 ```
 
 2. Initialize Governance System
@@ -33,11 +33,11 @@ Fetch other details from the package. Including ADMIN_CAP_ID and GOVERNANCE_SYST
 For this view all the SUI objects created using `sui client objects`.
 
 ```bash
-export GOVERNANCE_PACKAGE_ID=0x977d38221154b10b1166405477c3a699c350e72c62324bdb5eed55a5381ceb81
-export ADMIN_CAP_ID=0xfb7051d233740f2b98dc77dd9b0e80c050bdb9b135ca6f9ecc8c2ad8df0362de
-export GOVERNANCE_SYSTEM_ID=0x03240f21cf9b09e0f173e7fa9c623b654b3b0d93cb190708b475c5d43f11b54b
-export GOVTOKEN_ADMIN_CAP=0x360742070d2556eb131decbeeecf0adea2f34240ce9719a189f37b7bc9da2c67
-export TREASURY_ID=0xa479fa8aea6919ec292736e8c68831c38fae4fc86f7c20d59d2e44c6e9fa624a
+export GOVERNANCE_PACKAGE_ID=0x78f3c755b1d906864e4721dc887e59127553149a6f066acb45f6e37524925186
+export ADMIN_CAP_ID=0x85a4b9540e5e1f3945ecb1a3ca8f1b347c07fd9fa153538afaedcb3577eed0c5
+export GOVERNANCE_SYSTEM_ID=0xe44ef3829ed58d6ba539e9b6c5d5bca5cd7c6eb874fd415fe9cb5c479cb48001
+export GOVTOKEN_ADMIN_CAP=0xbb0e66baff85f284abf3852ffa14a9a51ac627bd30435c77b29b399a5b30507d
+export TREASURY_ID=0xad222a43236d0d6e692b1b90e4ee3dbde6000023efc0e644da3b94f22633d9fa
 export MY_ADDRESS=0xd400e9ad38603b5cb41c88b865bfdadd3e8855a3613cef083b20126c9b59a854
 ```
 
@@ -58,11 +58,11 @@ Extract governance token id from the created objects.
 export GOV_TOKEN_ID=0xee5446fb19397b8d8f7e08f72ff84da87f5bb3ac99e15c804f258a6452bc6254
 ```
 
-4. Create a Proposal
+4. Create a Proposal (Increment)
 
 ```bash
-sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function create_proposal \
-  --args $GOVERNANCE_SYSTEM_ID $GOV_TOKEN_ID "Set counter to 42" "This proposal will set the counter value to 42" 1 \
+sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function create_increment_proposal \
+  --args $GOVERNANCE_SYSTEM_ID $GOV_TOKEN_ID "Set counter to 42" "This proposal will set the counter value to 42" 1 "0x6"  \
   --gas-budget 10000000
 ```
 

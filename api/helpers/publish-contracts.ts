@@ -9,14 +9,8 @@ import { publishPackage } from '../sui-utils';
 /// We're publishing both as part of our demo.
 (async () => {
 	await publishPackage({
-		packagePath: __dirname + '/../../contracts/escrow',
+		packagePath: __dirname + '/../../contracts/generic_governor',
 		network: 'testnet',
-		exportFileName: 'escrow-contract',
-	});
-
-	await publishPackage({
-		packagePath: __dirname + '/../../contracts/demo',
-		network: 'testnet',
-		exportFileName: 'demo-contract',
-	});
+		exportFileName: 'simple-governance',
+	})
 })();
