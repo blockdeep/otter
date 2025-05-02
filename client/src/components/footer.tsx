@@ -10,13 +10,13 @@ export function Footer() {
             <a href="/" className="flex items-center gap-2">
               <img
                 src={Logo}
-                alt="DUGONG Logo"
+                alt="OTTER logo"
                 width={24}
                 height={24}
                 className="h-6 w-6"
               />
               <span className="text-xl font-bold text-card-foreground">
-                DUGONG
+                OTTER
               </span>
             </a>
             <p className="text-sm text-muted-foreground">
@@ -74,7 +74,7 @@ export function Footer() {
         </div>
         <div className="mt-8 flex flex-col-reverse items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} DUGONG. All rights reserved.
+            &copy; {new Date().getFullYear()} OTTER. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a

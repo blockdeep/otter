@@ -15,12 +15,12 @@ export function Navbar() {
           <a href="/" className="flex items-center gap-2">
             <img
               src={Logo}
-              alt="DUGONG Logo"
+              alt="OTTER Logo"
               width={24}
               height={24}
               className="h-6 w-6"
             />
-            <span className="text-xl font-bold text-foreground">DUGONG</span>
+            <span className="text-xl font-bold text-foreground">OTTER</span>
           </a>
         </div>
         

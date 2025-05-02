@@ -41,7 +41,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        
+
         {/* Features Section */}
         <section className="py-12 md:py-24 bg-card">
           <div className="container px-4 md:px-6 mx-auto">
@@ -98,7 +98,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        
+
         {/* Storage Refund Highlight */}
         <section className="py-16 md:py-24 bg-secondary/50">
           <div className="container px-4 md:px-6 mx-auto">
@@ -162,17 +162,17 @@ export default function Home() {
             </div>
           </div>
         </section>
-        
+
         {/* About Section */}
         <section className="py-12 md:py-24 bg-background">
           <div className="container px-4 md:px-6 mx-auto">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-foreground">
-                  About DUGONG
+                  About OTTER
                 </h2>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  DUGONG is built with a community-first approach to governance
+                  OTTER is built with a community-first approach to governance
                   on the Sui blockchain. We believe in creating tools that
                   empower dApps to make decisions collectively and
                   transparently.
@@ -181,7 +181,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        
+
         {/* Partner dApps */}
         <section className="py-12 md:py-24 bg-secondary/50">
           <div className="container px-4 md:px-6 mx-auto">

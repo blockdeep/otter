@@ -2,6 +2,8 @@
  * API service for fetching governance data
  */
 
+
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 
 // Types for our governance data
