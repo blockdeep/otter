@@ -60,6 +60,11 @@ model Proposal {
   abstain    Int?
   votes Vote[]
   executed Boolean @default(false)
+
+  governanceId   Int?     // Foreign key to GovernanceAddress
+  governance     GovernanceAddress? @relation(fields: [governanceId], references: [id])
+
+  @@index([governanceId])
 }
 
 model Vote {
@@ -73,6 +78,21 @@ model Vote {
   
   @@unique([proposalId, voter]) // Ensures each voter can only vote once per proposal
 }
+
+model GovernanceAddress {
+  id          Int      @id @default(autoincrement())
+  address     String   @unique
+  projectName String
+  createdAt   DateTime @default(now())
+  details     String
+  active      Boolean  @default(true)  // To enable/disable addresses without deletion
+
+  proposals   Proposal[]
+
+  @@index([active])  // For filtering active addresses efficiently
+  @@index([projectName])
+}
+
 
 /// Saves the latest cursor for a given key.
 model Cursor {

@@ -17,6 +17,7 @@ type ProposalCreated = {
   title: String;
   voting_ends_at: string;
   threshold: string;
+  governance_address: string;
 };
 
 type VoteCasted = {
@@ -37,7 +38,7 @@ type ProposalExecuted = {
 };
 
 /**
- * Handles all events emitted by the `escrow` module.
+ * Handles all events emitted by the `governanace` module.
  * Data is modelled in a way that allows writing to the db in any order (DESC or ASC) without
  * resulting in data incosistencies.
  * We're constructing the updates to support multiple events involving a single record
@@ -48,10 +49,22 @@ export const handleGovernanceObjects = async (
   type: string
 ) => {
   const updates: Record<string, Prisma.ProposalCreateInput> = {};
+  const governanceAddressCache: Record<string, number> = {};
+
+  const governanceAddresses = await prisma.governanceAddress.findMany({
+    select: { id: true, address: true },
+  });
+
+  for (const gov of governanceAddresses) {
+    governanceAddressCache[gov.address] = gov.id;
+  }
 
   for (const event of events) {
     if (!event.type.startsWith(type))
       throw new Error("Invalid event module origin");
+
+    const governanceAddress = event.packageId;
+
     const data = event.parsedJson as GovernanceEvent;
 
     if (!Object.hasOwn(updates, data.proposal_id)) {
@@ -109,6 +122,11 @@ export const handleGovernanceObjects = async (
     updates[data.proposal_id].title = creationData.title as string;
     updates[data.proposal_id].votingEndsAt = creationData.voting_ends_at;
     updates[data.proposal_id].threshold = creationData.threshold;
+    updates[data.proposal_id].governance = {
+      connect: {
+        id: governanceAddressCache[governanceAddress],
+      },
+    };
   }
 
   //  As part of the demo and to avoid having external dependencies, we use SQLite as our database.

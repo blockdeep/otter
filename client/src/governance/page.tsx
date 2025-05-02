@@ -60,7 +60,7 @@ const governanceApps = [
 export default function GovernancePage() {
   const navigate = useNavigate();
 
-  const handleViewProposals = (appId) => {
+  const handleViewProposals = (appId: string) => {
     navigate(`/governance/${appId}/proposals`);
   };
 
