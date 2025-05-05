@@ -22,6 +22,7 @@ module generic_governor::governance {
     const EProposalStillActive: u64 = 7;
     const EInvalidVoteType: u64 = 8;
     const EProposalNotFound: u64 = 9;
+    const EInvalidProposalKind: u64 = 10;
 
     /// Minimum tokens required to create a proposal
     const MIN_PROPOSAL_THRESHOLD: u64 = 100_000_000; // 1 token with 8 decimals
@@ -59,7 +60,7 @@ module generic_governor::governance {
         id: UID,
     }
 
-    /// Proposal Kinds
+    /// Proposal Kinds -- SPECIFIC TO THE CONTRACT THAT HAS TO BE GOVERNED
     public enum ProposalKind has drop, store {
         Increment,
         SetValue {value: u64}
@@ -174,49 +175,33 @@ module generic_governor::governance {
     }
 
     // === Proposal management ===
-
-    /// Create an increment proposal
-    public entry fun create_increment_proposal(
-        self: &mut GovernanceSystem,
-        governance_coins: &Coin<GOVTOKEN>,
-        title: String,
-        description: String,
-        voting_period_seconds: u64,
-        clock: &Clock,
-        ctx: &mut TxContext,
-    ) : ID {
-        let proposal_kind = ProposalKind::Increment;
-        create_proposal_internal(self, governance_coins, title, description, 
-                                voting_period_seconds, proposal_kind, clock, ctx)
-    }
-
-    /// Create a set value proposal
-    public entry fun create_set_value_proposal(
-        self: &mut GovernanceSystem,
-        governance_coins: &Coin<GOVTOKEN>,
-        title: String,
-        description: String,
-        voting_period_seconds: u64,
-        value: u64,
-        clock: &Clock,
-        ctx: &mut TxContext,
-    ) : ID {
-        let proposal_kind = ProposalKind::SetValue { value };
-        create_proposal_internal(self, governance_coins, title, description, 
-                                voting_period_seconds, proposal_kind, clock, ctx)
-    }
-
+   
     /// Internal function to create proposals (not entry)
-    fun create_proposal_internal(
+    public entry fun create_proposal(
         self: &mut GovernanceSystem,
         governance_coins: &Coin<GOVTOKEN>,
         title: String,
         description: String,
         voting_period_seconds: u64,
-        proposal_kind: ProposalKind,
         clock: &Clock,
+        proposal_kind: u8, // this would be template, any variable after this is custom to the governee contract
+        value: u64,
         ctx: &mut TxContext,
     ) : ID {
+        let pK: ProposalKind;
+
+        match (proposal_kind) {
+            0 => {
+                pK = ProposalKind::Increment;
+            },
+            1 => {
+                pK = ProposalKind::SetValue { value };
+            },
+            _ => {
+                abort EInvalidProposalKind
+            }
+        };
+
         // Ensure the coin owner has enough tokens to create a proposal
         let voting_power = coin::value(governance_coins);
         assert!(voting_power >= MIN_PROPOSAL_THRESHOLD, EInsufficientVotingPower);
@@ -234,7 +219,7 @@ module generic_governor::governance {
             title,
             description,
             status: PROPOSAL_STATUS_ACTIVE,
-            kind: proposal_kind,
+            kind: pK,
             yes_votes: 0,
             no_votes: 0,
             abstain_votes: 0,
@@ -400,7 +385,7 @@ module generic_governor::governance {
     public entry fun execute_proposal(
     self: &mut GovernanceSystem,
     proposal_id: ID,
-    counter: &mut simple_counter::Counter, // Needed for counter operations
+    counter: &mut simple_counter::Counter, // Needed for counter operations - SPECIFIC TO THE CONTRACT
     ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -410,7 +395,7 @@ module generic_governor::governance {
         // Ensure proposal passed
         assert!(proposal.status == PROPOSAL_STATUS_PASSED, EProposalNotFinalized);
 
-        // Execute the proposal based on its kind
+        // Execute the proposal based on its kind  - VERY SPECIFIC TO THE APP CONTRACT
         // Use a reference to proposal.kind
         match (&proposal.kind) {
             ProposalKind::Increment => {

@@ -5,8 +5,7 @@
 
 ```bash
 export COUNTER_PACKAGE_ID=0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd
-export GOVERNANCE_PACKAGE_ID=0x78f3c755b1d906864e4721dc887e59127553149a6f066acb45f6e37524925186
-
+export GOVERNANCE_PACKAGE_ID=0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1
 ```
 
 ## STIMULATING GOVERNANCE.
@@ -24,7 +23,7 @@ P.S: Note down the object created - this will be our counter object.
 
 In my case
 ```bash
-export COUNTER_OBJECT=0x0f0718e4e590bcf85e02f44f412fef11a31a7ae67fb37fb21266fea95b1ae49c
+export COUNTER_OBJECT=0xb6d748c59faa061c1f0b452c42ec6632e5426332c1b05e44486f21f2c1ba87c3
 ```
 
 2. Initialize Governance System
@@ -33,11 +32,10 @@ Fetch other details from the package. Including ADMIN_CAP_ID and GOVERNANCE_SYST
 For this view all the SUI objects created using `sui client objects`.
 
 ```bash
-export GOVERNANCE_PACKAGE_ID=0x78f3c755b1d906864e4721dc887e59127553149a6f066acb45f6e37524925186
-export ADMIN_CAP_ID=0x85a4b9540e5e1f3945ecb1a3ca8f1b347c07fd9fa153538afaedcb3577eed0c5
-export GOVERNANCE_SYSTEM_ID=0xe44ef3829ed58d6ba539e9b6c5d5bca5cd7c6eb874fd415fe9cb5c479cb48001
-export GOVTOKEN_ADMIN_CAP=0xbb0e66baff85f284abf3852ffa14a9a51ac627bd30435c77b29b399a5b30507d
-export TREASURY_ID=0xad222a43236d0d6e692b1b90e4ee3dbde6000023efc0e644da3b94f22633d9fa
+export ADMIN_CAP_ID=0x01968757b52e1b9c7f7ac44a167984c83757cc1de844500db964cbc5315cc775
+export GOVERNANCE_SYSTEM_ID=0xf959b09a23202f1e04fb8379107e3fbfc0f5597d4a0bd7a04eae2c6b92b6b771
+export GOVTOKEN_ADMIN_CAP=0xbd1ac83f0b22310a333a60d3fa88779e2881b6ab72d7c06059d6b88467341d7c
+export TREASURY_ID=0x2533bd61ecd09cd585329d3245b58f8d33d6551a797c82515ccb31db0c473aa8
 export MY_ADDRESS=0xd400e9ad38603b5cb41c88b865bfdadd3e8855a3613cef083b20126c9b59a854
 ```
 
@@ -55,40 +53,40 @@ sui client call --package $GOVERNANCE_PACKAGE_ID --module govtoken --function mi
 
 Extract governance token id from the created objects.
 ```bash
-export GOV_TOKEN_ID=0xee5446fb19397b8d8f7e08f72ff84da87f5bb3ac99e15c804f258a6452bc6254
+export GOV_TOKEN_ID=0x9777bb0fdb3a4181966abc7a7b2d1a3d54b06109a21edc20f3122b172d3bfc74
 ```
 
 4. Create a Proposal (Increment)
 
 ```bash
-sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function create_increment_proposal \
-  --args $GOVERNANCE_SYSTEM_ID $GOV_TOKEN_ID "Set counter to 42" "This proposal will set the counter value to 42" 1 "0x6"  \
+sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function create_proposal \
+  --args $GOVERNANCE_SYSTEM_ID $GOV_TOKEN_ID "Set counter to 33" "This proposal will set the counter value to 42" 120 "0x6" 0  33 \
   --gas-budget 10000000
 ```
 
 ```bash
-export PROPOSAL_ID=0xd373891cff8a8aee2111941a341c2a8fded392bb8c504d9f31a9e143a7b95f3b
+export PROPOSAL_ID=0x12a8fcbd50296ad40a1f6a0a541d68f185b93e558adc6122ad3fc2f8c9da64e8
 ```
 
 5. Vote on the Proposal
 
 ```bash
 sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function vote \
-  --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID $GOV_TOKEN_ID 0 \
+  --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID $GOV_TOKEN_ID 0 "0x6"\
   --gas-budget 10000000
 ```
 
 6.  Finalize the Proposal
 ```bash
 sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function finalize_proposal \
-  --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID \
+  --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID "0x6"\
   --gas-budget 10000000
 ```
 
 7. Execute the Proposal on the Counter
 
 ```bash
-sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function execute_counter_proposal \
-  --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID $COUNTER_ID 42 \
+sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function execute_proposal \
+  --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID $COUNTER_OBJECT 42 \
   --gas-budget 10000000
 ```
