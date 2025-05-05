@@ -13,6 +13,7 @@ import "./index.css";
 import GovernancePage from "./governance/page.jsx";
 import ProposalsPage from "./governance/[app]/proposals/page.jsx";
 import ProposalDetailsPage from "./governance/[app]/proposals/[proposalId]/page.jsx";
+import LaunchGovernancePage from "./governance/launch/page.js";
 
 const router = createBrowserRouter([
   {
@@ -22,6 +23,10 @@ const router = createBrowserRouter([
   {
     path: "/governance",
     element: <GovernancePage />,
+  },
+  {
+    path: "/governance/launch",
+    element: <LaunchGovernancePage />,
   },
   {
     path: "/governance/:app/proposals",

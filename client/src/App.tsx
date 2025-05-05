@@ -35,7 +35,7 @@ export default function Home() {
                   variant="outline"
                   className="border-primary/20 hover:bg-primary/5 text-primary"
                 >
-                  <a href="#">Launch Governance</a>
+                  <a href="governance/launch">Launch Governance</a>
                 </Button>
               </div>
             </div>

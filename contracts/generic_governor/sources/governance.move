@@ -190,6 +190,7 @@ module generic_governor::governance {
     ) : ID {
         let pK: ProposalKind;
 
+        // this is specific to the APP - contract- will have to written dynamically.
         match (proposal_kind) {
             0 => {
                 pK = ProposalKind::Increment;
