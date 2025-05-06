@@ -1,6 +1,5 @@
+import { useState } from 'react';
 import { ArrowRight, Upload, FileCode, Check, AlertCircle } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,96 +24,43 @@ import {
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import useContractProcessor from '@/hooks/useContractProcessor';
 
 export default function LaunchGovernancePage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("upload");
-  const [file, setFile] = useState(null);
-  const [contractCode, setContractCode] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
-  const [processingStatus, setProcessingStatus] = useState("");
-  const [generatedGovernance, setGeneratedGovernance] = useState("");
-  const [isDeployReady, setIsDeployReady] = useState(false);
+  const {
+    contractCode,
+    isProcessing,
+    result,
+    error,
+    handleContractCodeChange,
+    processContract,
+    downloadGovernanceContract
+  } = useContractProcessor();
 
-  const handleFileUpload = (event) => {
-    const uploadedFile = event.target.files[0];
-    if (uploadedFile) {
+  const [activeTab, setActiveTab] = useState("upload");
+  const [file, setFile] = useState<File | null>(null);
+
+  // After processing successfully, move to review tab
+  if (result && activeTab === "upload") {
+    setActiveTab("review");
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const uploadedFile = files[0];
       setFile(uploadedFile);
-      // Here you would normally read the file content
+      
+      // Read file content
       const reader = new FileReader();
       reader.onload = (e) => {
-        setContractCode(e.target.result);
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          handleContractCodeChange(result);
+        }
       };
       reader.readAsText(uploadedFile);
     }
-  };
-
-  const handleProcessContract = () => {
-    if (!contractCode) return;
-    
-    setIsProcessing(true);
-    setProcessingProgress(0);
-    setProcessingStatus("Analyzing contract structure...");
-    
-    // Simulate processing steps with progress updates
-    const timer1 = setTimeout(() => {
-      setProcessingProgress(25);
-      setProcessingStatus("Identifying contract parameters...");
-    }, 1500);
-
-    const timer2 = setTimeout(() => {
-      setProcessingProgress(50);
-      setProcessingStatus("Generating governance interfaces...");
-    }, 3000);
-
-    const timer3 = setTimeout(() => {
-      setProcessingProgress(75);
-      setProcessingStatus("Compiling governance module...");
-    }, 4500);
-
-    const timer4 = setTimeout(() => {
-      setProcessingProgress(100);
-      setProcessingStatus("Governance contract generated successfully!");
-      setIsProcessing(false);
-      setIsDeployReady(true);
-      setActiveTab("review");
-      
-      // Mock generated governance contract
-      setGeneratedGovernance(`module sui_governance::app_governance {
-    use sui::object::{Self, UID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-    use std::string::{Self, String};
-    use sui::event;
-    use sui::coin::{Self, Coin};
-    use sui::sui::SUI;
-    
-    // Your custom app contract integration
-    use your_package::your_module;
-    
-    // Governance parameters
-    const MIN_VOTING_DELAY: u64 = 86400; // 1 day in seconds
-    const MIN_VOTING_PERIOD: u64 = 259200; // 3 days in seconds
-    const MIN_QUORUM_VOTES: u64 = 500000000; // 500 SUI
-
-    // ... [governance contract implementation]
-    // ... [proposal creation and voting logic]
-    // ... [execution mechanism for your specific app contract]
-}`);
-      
-    }, 6000);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
-    };
-  };
-
-  const handleDeploy = () => {
-    navigate("/governance/deploy-success");
   };
 
   return (
@@ -175,8 +121,8 @@ export default function LaunchGovernancePage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="upload">Upload Contract</TabsTrigger>
-                <TabsTrigger value="review" disabled={!isDeployReady}>Review Integration</TabsTrigger>
-                <TabsTrigger value="deploy" disabled={!isDeployReady}>Deploy Governance</TabsTrigger>
+                <TabsTrigger value="review" disabled={!result}>Review Integration</TabsTrigger>
+                <TabsTrigger value="deploy" disabled={!result}>Deploy Governance</TabsTrigger>
               </TabsList>
               
               <TabsContent value="upload" className="mt-6">
@@ -217,14 +163,24 @@ export default function LaunchGovernancePage() {
                           placeholder="Paste your Move contract code here..."
                           className="min-h-[300px] font-mono text-sm"
                           value={contractCode}
-                          onChange={(e) => setContractCode(e.target.value)}
+                          onChange={(e) => handleContractCodeChange(e.target.value)}
                         />
                       </div>
 
+                      {error && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Error</AlertTitle>
+                          <AlertDescription>
+                            {error}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                       {isProcessing && (
                         <div className="space-y-2">
-                          <Progress value={processingProgress} className="w-full" />
-                          <p className="text-sm text-muted-foreground">{processingStatus}</p>
+                          <Progress value={isProcessing ? 50 : 0} className="w-full" />
+                          <p className="text-sm text-muted-foreground">Analyzing contract and generating governance...</p>
                         </div>
                       )}
                     </div>
@@ -232,7 +188,7 @@ export default function LaunchGovernancePage() {
                   <CardFooter>
                     <Button 
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                      onClick={handleProcessContract}
+                      onClick={processContract}
                       disabled={!contractCode || isProcessing}
                     >
                       Process Contract <ArrowRight className="ml-2 h-4 w-4" />
@@ -250,34 +206,99 @@ export default function LaunchGovernancePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Alert className="mb-6">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Important</AlertTitle>
-                      <AlertDescription>
-                        Review the generated code carefully. This module will control your dApp's governance processes.
-                      </AlertDescription>
-                    </Alert>
-                    
-                    <div className="bg-secondary/50 p-4 rounded-md overflow-auto max-h-[400px]">
-                      <pre className="text-sm font-mono whitespace-pre">
-                        {generatedGovernance}
-                      </pre>
-                    </div>
+                    {result ? (
+                      <>
+                        <Alert className="mb-6">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Important</AlertTitle>
+                          <AlertDescription>
+                            Review the generated code carefully. This module will control your dApp's governance processes.
+                          </AlertDescription>
+                        </Alert>
+
+                        <div className="mb-6">
+                          <h3 className="text-lg font-medium mb-2">Module Details</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/50 p-4 rounded-md">
+                            <div>
+                              <p className="text-sm font-medium">Package Name:</p>
+                              <p className="font-mono">{result.moduleInfo.packageName}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">Module Name:</p>
+                              <p className="font-mono">{result.moduleInfo.moduleName}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mb-6">
+                          <h3 className="text-lg font-medium mb-2">Governable Actions</h3>
+                          <div className="space-y-2">
+                            {result.governableActions.length > 0 ? (
+                              result.governableActions.map((action, index) => (
+                                <div key={index} className="bg-muted/50 p-3 rounded-md">
+                                  <p className="font-mono font-medium">{action.name}</p>
+                                  {action.parameters.length > 0 && (
+                                    <div className="mt-1 pl-4">
+                                      <p className="text-sm text-muted-foreground">Parameters:</p>
+                                      {action.parameters.map((param, pIndex) => (
+                                        <p key={pIndex} className="text-sm font-mono">
+                                          {param.name}: {param.type}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p>No governable actions found in your contract.</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-lg font-medium mb-2">Generated Governance Contract</h3>
+                          <div className="bg-secondary/50 p-4 rounded-md overflow-auto max-h-[400px]">
+                            <pre className="text-sm font-mono whitespace-pre">
+                              {result.governanceContract}
+                            </pre>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <p>No contract has been processed yet. Please go back and upload a contract.</p>
+                    )}
                   </CardContent>
                   <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
                     <Button 
                       variant="outline" 
                       className="w-full sm:w-auto"
-                      onClick={() => setActiveTab("upload")}
+                      onClick={() => {
+                        console.log("Back clicked");
+                        
+                        setActiveTab("upload");
+                        console.log(activeTab);
+                        
+                      }}
                     >
                       Go Back
                     </Button>
-                    <Button 
-                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
-                      onClick={() => setActiveTab("deploy")}
-                    >
-                      Continue to Deploy <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    {result && (
+                      <>
+                        <Button 
+                          variant="secondary"
+                          className="w-full sm:w-auto"
+                          onClick={downloadGovernanceContract}
+                        >
+                          Download Contract
+                        </Button>
+                        <Button 
+                          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
+                          onClick={() => setActiveTab("deploy")}
+                        >
+                          Continue to Deploy <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </CardFooter>
                 </Card>
               </TabsContent>
@@ -317,6 +338,16 @@ export default function LaunchGovernancePage() {
                           </div>
                         </div>
                       </div>
+
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Next Steps</h3>
+                        <ol className="list-decimal list-inside space-y-2 text-sm">
+                          <li>Download your generated governance contract</li>
+                          <li>Run the SUI CLI command to publish it to the network</li>
+                          <li>Connect your existing dApp to the new governance contract</li>
+                          <li>Distribute governance tokens to your community</li>
+                        </ol>
+                      </div>
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
@@ -328,10 +359,16 @@ export default function LaunchGovernancePage() {
                       Go Back
                     </Button>
                     <Button 
-                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
-                      onClick={handleDeploy}
+                      variant="secondary"
+                      className="w-full sm:w-auto"
+                      onClick={downloadGovernanceContract}
                     >
-                      Deploy Governance <ArrowRight className="ml-2 h-4 w-4" />
+                      Download Contract
+                    </Button>
+                    <Button 
+                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      Deploy via CLI <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardFooter>
                 </Card>

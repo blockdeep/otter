@@ -12,12 +12,15 @@ import {
   WhereParam,
   WhereParamTypes,
 } from "./utils/api-queries";
+import contractProcessorRouter from "./routes/contractProcessor";
 
 const PORT = process.env.PORT || 50000;
 const app = express();
 app.use(cors());
 
 app.use(express.json());
+
+app.use('/api', contractProcessorRouter);
 
 app.get("/", async (req, res) => {
   res.send({ message: "🚀 API is functional 🚀" });
