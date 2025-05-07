@@ -1,6 +1,5 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-
 import express, { Request, Response } from 'express';
 
 /**
@@ -9,10 +8,9 @@ import express, { Request, Response } from 'express';
 const router = express.Router();
 
 /**
- * Process a Move contract and generate a governance contract
- */
-// @ts-ignore
-router.post('/process-contract', async (req, res) => {
+ * Parse a Move contract to extract module info and identify potential governable actions
+ */ // @ts-ignore
+router.post('/parse-contract', async (req: Request, res: Response) => {
   try {
     const { contractCode } = req.body;
     
@@ -26,7 +24,88 @@ router.post('/process-contract', async (req, res) => {
     // Extract module info from the contract
     const moduleInfo = extractModuleInfo(contractCode);
     
-    // Identify governable actions
+    // Identify all potential governable actions (public entry functions)
+    const governableActions = identifyAllPotentialActions(contractCode);
+    
+    // Return the result
+    return res.status(200).json({
+      success: true,
+      data: {
+        moduleInfo,
+        governableActions
+      }
+    });
+  } catch (error) {
+    console.error('Error parsing contract:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred while parsing the contract'
+    });
+  }
+});
+
+/**
+ * Generate a governance contract based on selected governable actions
+ */ // @ts-ignore
+router.post('/generate-governance', async (req: Request, res: Response) => {
+  try {
+    const { contractCode, governableActions } = req.body;
+    
+    if (!contractCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing contract code'
+      });
+    }
+    
+    if (!governableActions || !Array.isArray(governableActions) || governableActions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No governable actions selected'
+      });
+    }
+    
+    // Extract module info from the contract
+    const moduleInfo = extractModuleInfo(contractCode);
+    
+    // Generate governance contract using only the selected actions
+    const governanceContract = generateGovernanceContract(moduleInfo, governableActions, contractCode);
+    
+    // Return the result
+    return res.status(200).json({
+      success: true,
+      data: {
+        moduleInfo,
+        governableActions,
+        governanceContract
+      }
+    });
+  } catch (error) {
+    console.error('Error generating governance contract:', error);
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An error occurred while generating governance contract'
+    });
+  }
+});
+
+// Keep the original endpoint for backward compatibility 
+// @ts-ignore
+router.post('/process-contract', async (req: Request, res: Response) => {
+  try {
+    const { contractCode } = req.body;
+    
+    if (!contractCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing contract code'
+      });
+    }
+    
+    // Extract module info from the contract
+    const moduleInfo = extractModuleInfo(contractCode);
+    
+    // Identify governable actions (using the original method)
     const governableActions = identifyGovernableActions(contractCode);
     
     // Generate governance contract
@@ -89,21 +168,95 @@ interface ParameterInfo {
 interface GovernableAction {
   name: string;
   parameters: ParameterInfo[];
+  description?: string;
 }
 
 /**
- * Identify governable actions in a Move contract
+ * Identify all public entry functions in a Move contract 
+ * without applying filtering heuristics
+ */
+function identifyAllPotentialActions(contractCode: string): GovernableAction[] {
+  const potentialActions: GovernableAction[] = [];
+  
+  // Look for all public | entry functions
+  const functionRegex = /public\s+(entry\s+)?fun\s+([a-zA-Z0-9_]+)\s*\((.*?)\)/g;
+  
+  let match;
+  while ((match = functionRegex.exec(contractCode)) !== null) {
+    const functionName = match[2];
+    const parametersRaw = match[3];
+    
+    // Parse parameters
+    const parameters = parseParameters(parametersRaw);
+    
+    // Extract function description from comments above the function
+    const description = extractFunctionDescription(contractCode, functionName);
+    
+    // Add to potential governable actions with description
+    potentialActions.push({
+      name: functionName,
+      parameters,
+      description
+    });
+  }
+  
+  return potentialActions;
+}
+
+/**
+ * Extract function description from comments
+ */
+function extractFunctionDescription(contractCode: string, functionName: string): string | undefined {
+  // Look for comments above the function declaration
+  const commentRegex = new RegExp(`((?:\\/\\/.*\\n)+)\\s*public\\s+(entry\\s+)?fun\\s+${functionName}\\s*\\(`, 'm');
+  const match = contractCode.match(commentRegex);
+  
+  if (match && match[1]) {
+    // Clean up the comment
+    return match[1]
+      .split('\n')
+      .map(line => line.replace(/^\s*\/\/\s*/, '').trim())
+      .filter(line => line)
+      .join(' ');
+  }
+  
+  // Try to determine a description based on the function name
+  const stateChangeKeywords = {
+    'set': 'Sets or updates a value',
+    'update': 'Updates a value or state',
+    'change': 'Changes a value or state',
+    'modify': 'Modifies a value or state',
+    'create': 'Creates a new resource or entry',
+    'add': 'Adds a new item or value',
+    'remove': 'Removes an item or value',
+    'delete': 'Deletes an item or resource',
+    'increment': 'Increments a counter or value',
+    'decrement': 'Decrements a counter or value'
+  };
+  
+  for (const [keyword, description] of Object.entries(stateChangeKeywords)) {
+    if (functionName.toLowerCase().includes(keyword)) {
+      return `${description} (auto-detected)`;
+    }
+  }
+  
+  return 'Executes a state change in the contract';
+}
+
+/**
+ * Identify governable actions in a Move contract with original heuristics
+ * for backward compatibility
  */
 function identifyGovernableActions(contractCode: string): GovernableAction[] {
   const governableActions: GovernableAction[] = [];
   
-  // Look for public entry functions
-  const functionRegex = /public\s+entry\s+fun\s+([a-zA-Z0-9_]+)\s*\((.*?)\)/g;
+  // Look for public | entry functions
+  const functionRegex =  /public\s+(entry\s+)?fun\s+([a-zA-Z0-9_]+)\s*\((.*?)\)/g;
   
   let match;
   while ((match = functionRegex.exec(contractCode)) !== null) {
-    const functionName = match[1];
-    const parametersRaw = match[2];
+    const functionName = match[2];
+    const parametersRaw = match[3];
     
     // Parse parameters
     const parameters = parseParameters(parametersRaw);
@@ -200,7 +353,7 @@ function generateGovernanceContract(
   contractCode: string
 ): string {
   if (governableActions.length === 0) {
-    throw new Error('No governable actions found in the contract');
+    throw new Error('No governable actions selected for the contract');
   }
   
   // Try to find the main struct
@@ -776,8 +929,8 @@ function generateProposalCreationLogic(governableActions: GovernableAction[]): s
 /**
  * Capitalize the first letter of a string
  */
-function capitalizeFirstLetter(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+function capitalizeFirstLetter(string: string): string {
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 export default router;

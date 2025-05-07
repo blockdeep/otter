@@ -1,5 +1,3 @@
-// Hook for contract processing integration with the backend
-
 import { useState } from 'react';
 
 /**
@@ -16,6 +14,7 @@ export interface ParameterInfo {
 export interface GovernableAction {
   name: string;
   parameters: ParameterInfo[];
+  description?: string;
 }
 
 /**
@@ -50,6 +49,8 @@ interface ApiResponse<T> {
 export function useContractProcessor() {
   const [contractCode, setContractCode] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [detectedActions, setDetectedActions] = useState<GovernableAction[]>([]);
+  const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   
@@ -66,12 +67,16 @@ export function useContractProcessor() {
       setResult(null);
       setError(null);
     }
+    
+    // Reset detected actions and selections
+    setDetectedActions([]);
+    setSelectedActions([]);
   };
   
   /**
-   * Process the contract
+   * Parse the contract to identify potential governable actions
    */
-  const processContract = async () => {
+  const parseContract = async () => {
     if (!contractCode) {
       setError('Please enter contract code');
       return;
@@ -81,7 +86,7 @@ export function useContractProcessor() {
       setIsProcessing(true);
       setError(null);
       
-      const response = await fetch(`${API_URL}/process-contract`, {
+      const response = await fetch(`${API_URL}/parse-contract`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,16 +96,84 @@ export function useContractProcessor() {
         }),
       });
       
+      const data = await response.json() as ApiResponse<{
+        moduleInfo: ModuleInfo,
+        governableActions: GovernableAction[]
+      }>;
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Error parsing contract');
+      }
+      
+      if (!data.data) {
+        throw new Error('No data returned from API');
+      }
+      
+      setDetectedActions(data.data.governableActions);
+      
+      // Automatically select all actions by default
+      setSelectedActions(data.data.governableActions.map(action => action.name));
+      
+    } catch (err) {
+      console.error('Error parsing contract:', err);
+      setError(err instanceof Error ? err.message : 'Failed to parse contract');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  /**
+   * Toggle selection of a governable action
+   */
+  const toggleActionSelection = (actionName: string) => {
+    setSelectedActions(prev => {
+      if (prev.includes(actionName)) {
+        return prev.filter(name => name !== actionName);
+      } else {
+        return [...prev, actionName];
+      }
+    });
+  };
+  
+  /**
+   * Generate governance contract based on selected functions
+   */
+  const generateGovernanceContract = async () => {
+    if (selectedActions.length === 0) {
+      setError('Please select at least one function to govern');
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      setError(null);
+      
+      // Filter detected actions to only include selected ones
+      const actionsToInclude = detectedActions.filter(action => 
+        selectedActions.includes(action.name)
+      );
+      
+      const response = await fetch(`${API_URL}/generate-governance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contractCode,
+          governableActions: actionsToInclude
+        }),
+      });
+      
       const data = await response.json() as ApiResponse<ProcessingResult>;
       
       if (!data.success) {
-        throw new Error(data.message || 'Error processing contract');
+        throw new Error(data.message || 'Error generating governance contract');
       }
       
       setResult(data.data || null);
     } catch (err) {
-      console.error('Error processing contract:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process contract');
+      console.error('Error generating governance contract:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate governance contract');
     } finally {
       setIsProcessing(false);
     }
@@ -132,11 +205,15 @@ export function useContractProcessor() {
   return {
     contractCode,
     isProcessing,
+    detectedActions,
+    selectedActions,
     result,
     error,
     handleContractCodeChange,
-    processContract,
-    downloadGovernanceContract
+    parseContract,
+    generateGovernanceContract,
+    downloadGovernanceContract,
+    toggleActionSelection
   };
 }
 

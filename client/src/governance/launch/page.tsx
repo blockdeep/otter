@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, Upload, FileCode, Check, AlertCircle } from "lucide-react";
+import { ArrowRight, Upload, FileCode, Check, AlertCircle, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,24 +24,34 @@ import {
 } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import useContractProcessor from '@/hooks/useContractProcessor';
 
 export default function LaunchGovernancePage() {
   const {
     contractCode,
     isProcessing,
+    detectedActions,
+    selectedActions,
     result,
     error,
     handleContractCodeChange,
-    processContract,
-    downloadGovernanceContract
+    parseContract,
+    generateGovernanceContract,
+    downloadGovernanceContract,
+    toggleActionSelection,
   } = useContractProcessor();
 
   const [activeTab, setActiveTab] = useState("upload");
   const [file, setFile] = useState<File | null>(null);
 
-  // After processing successfully, move to review tab
-  if (result && activeTab === "upload") {
+  // After parsing successfully, move to selection tab
+  if (detectedActions.length > 0 && activeTab === "upload") {
+    setActiveTab("select");
+  }
+
+  // After generating successfully, move to review tab
+  if (result && activeTab === "select") {
     setActiveTab("review");
   }
 
@@ -74,7 +84,7 @@ export default function LaunchGovernancePage() {
                 Launch Your Governance
               </h1>
               <p className="text-muted-foreground md:text-xl max-w-[700px]">
-                Connect your dApp to our unified governance platform in three simple steps
+                Connect your dApp to our unified governance platform in four simple steps
               </p>
             </div>
 
@@ -93,27 +103,37 @@ export default function LaunchGovernancePage() {
                       <FileCode className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-medium">1. Upload Your Contract</h3>
+                      <h3 className="font-medium">1. Upload Contract</h3>
                       <p className="text-sm text-muted-foreground">Provide your dApp's smart contract</p>
                     </div>
                   </div>
-                  {/* Step 2 with subtle border */}
+                  {/* New Step 2 with subtle border */}
                   <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all bg-white">
                     <div className="rounded-full bg-primary/10 p-3 text-primary">
-                      <AlertCircle className="h-6 w-6" />
+                      <List className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-medium">2. Review Integration</h3>
-                      <p className="text-sm text-muted-foreground">Check the generated governance module</p>
+                      <h3 className="font-medium">2. Select Functions</h3>
+                      <p className="text-sm text-muted-foreground">Choose which functions to govern</p>
                     </div>
                   </div>
                   {/* Step 3 with subtle border */}
                   <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all bg-white">
                     <div className="rounded-full bg-primary/10 p-3 text-primary">
+                      <AlertCircle className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">3. Review Integration</h3>
+                      <p className="text-sm text-muted-foreground">Check the generated governance module</p>
+                    </div>
+                  </div>
+                  {/* Step 4 with subtle border */}
+                  <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all bg-white">
+                    <div className="rounded-full bg-primary/10 p-3 text-primary">
                       <Check className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-medium">3. Deploy</h3>
+                      <h3 className="font-medium">4. Deploy</h3>
                       <p className="text-sm text-muted-foreground">Launch your governance module</p>
                     </div>
                   </div>
@@ -122,12 +142,19 @@ export default function LaunchGovernancePage() {
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 border border-gray-300 p-1 rounded-lg shadow-sm">
+              <TabsList className="grid w-full grid-cols-4 border border-gray-300 p-1 rounded-lg shadow-sm">
                 <TabsTrigger 
                   value="upload"
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
                   Upload Contract
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="select" 
+                  disabled={detectedActions.length === 0}
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                >
+                  Select Functions
                 </TabsTrigger>
                 <TabsTrigger 
                   value="review" 
@@ -150,7 +177,7 @@ export default function LaunchGovernancePage() {
                   <CardHeader>
                     <CardTitle>Upload Your Contract</CardTitle>
                     <CardDescription>
-                      Provide your dApp's smart contract code to generate a compatible governance module
+                      Provide your dApp's smart contract code to identify governable functions
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -200,7 +227,7 @@ export default function LaunchGovernancePage() {
                       {isProcessing && (
                         <div className="space-y-2">
                           <Progress value={isProcessing ? 50 : 0} className="w-full" />
-                          <p className="text-sm text-muted-foreground">Analyzing contract and generating governance...</p>
+                          <p className="text-sm text-muted-foreground">Analyzing contract and identifying governable functions...</p>
                         </div>
                       )}
                     </div>
@@ -208,10 +235,100 @@ export default function LaunchGovernancePage() {
                   <CardFooter>
                     <Button 
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
-                      onClick={processContract}
+                      onClick={parseContract}
                       disabled={!contractCode || isProcessing}
                     >
-                      Process Contract <ArrowRight className="ml-2 h-4 w-4" />
+                      Parse Contract <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              
+              {/* New Selection Tab */}
+              <TabsContent value="select" className="mt-6">
+                <Card className="border border-gray-300 shadow-md">
+                  <CardHeader>
+                    <CardTitle>Select Governable Functions</CardTitle>
+                    <CardDescription>
+                      Choose which functions from your contract should be governable
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {detectedActions.length > 0 ? (
+                      <div className="space-y-6">
+                        <Alert className="mb-6 border border-gray-300 shadow-sm bg-blue-50">
+                          <AlertCircle className="h-4 w-4 text-blue-500" />
+                          <AlertTitle>Function Selection</AlertTitle>
+                          <AlertDescription>
+                            We've identified {detectedActions.length} potential governable functions in your contract. 
+                            Select the ones you want to include in your governance module.
+                          </AlertDescription>
+                        </Alert>
+                        
+                        <div className="space-y-4">
+                          {detectedActions.map((action, index) => (
+                            <div 
+                              key={index} 
+                              className="flex items-start space-x-4 p-4 rounded-md border border-gray-300 shadow-sm hover:shadow-md transition-all bg-white"
+                            >
+                              <Checkbox 
+                                id={`action-${index}`} 
+                                checked={selectedActions.includes(action.name)}
+                                onCheckedChange={() => toggleActionSelection(action.name)}
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <label 
+                                  htmlFor={`action-${index}`} 
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                >
+                                  <span className="font-mono text-primary">{action.name}</span>
+                                </label>
+                                {action.parameters.length > 0 && (
+                                  <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                                    <p className="text-xs text-muted-foreground">Parameters:</p>
+                                    {action.parameters.map((param, pIndex) => (
+                                      <p key={pIndex} className="text-xs font-mono">
+                                        {param.name}: <span className="text-secondary-foreground">{param.type}</span>
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="mt-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    {action.description || "This function will be controlled by governance if selected."}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p>No governable actions detected in your contract. Please go back and upload a valid contract.</p>
+                    )}
+
+                    {isProcessing && (
+                      <div className="space-y-2 mt-6">
+                        <Progress value={isProcessing ? 50 : 0} className="w-full" />
+                        <p className="text-sm text-muted-foreground">Generating governance contract...</p>
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+                    <Button 
+                      variant="outline" 
+                      className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
+                      onClick={() => setActiveTab("upload")}
+                    >
+                      Go Back
+                    </Button>
+                    <Button 
+                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
+                      onClick={generateGovernanceContract}
+                      disabled={selectedActions.length === 0 || isProcessing}
+                    >
+                      Generate Governance <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardFooter>
                 </Card>
@@ -251,7 +368,7 @@ export default function LaunchGovernancePage() {
                         </div>
 
                         <div className="mb-6">
-                          <h3 className="text-lg font-medium mb-2">Governable Actions</h3>
+                          <h3 className="text-lg font-medium mb-2">Selected Governable Actions</h3>
                           <div className="space-y-4">
                             {result.governableActions.length > 0 ? (
                               result.governableActions.map((action, index) => (
@@ -270,7 +387,7 @@ export default function LaunchGovernancePage() {
                                 </div>
                               ))
                             ) : (
-                              <p>No governable actions found in your contract.</p>
+                              <p>No governable actions selected for your contract.</p>
                             )}
                           </div>
                         </div>
@@ -285,18 +402,14 @@ export default function LaunchGovernancePage() {
                         </div>
                       </>
                     ) : (
-                      <p>No contract has been processed yet. Please go back and upload a contract.</p>
+                      <p>No contract has been processed yet. Please go back and select governance functions.</p>
                     )}
                   </CardContent>
                   <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
                     <Button 
                       variant="outline" 
                       className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
-                      onClick={() => {
-                        console.log("Back clicked");
-                        setActiveTab("upload");
-                        console.log(activeTab);
-                      }}
+                      onClick={() => setActiveTab("select")}
                     >
                       Go Back
                     </Button>
