@@ -54,7 +54,7 @@ export function Navbar() {
         <div className="hidden md:flex gap-4 justify-end w-1/4">
           <ConnectButton />
           <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <a href="#">Launch Governance</a>
+            <a href="governance/launch">Launch Governance</a>
           </Button>
         </div>
         
@@ -104,7 +104,7 @@ export function Navbar() {
           <div className="flex flex-col gap-2 mt-4">
             <ConnectButton />
             <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              <a href="#">Launch Governance</a>
+              <a href="governance/launch">Launch Governance</a>
             </Button>
           </div>
         </div>
