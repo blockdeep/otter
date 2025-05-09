@@ -1,5 +1,6 @@
 import { ArrowLeft, Clock } from "lucide-react";
-import { useParams, useNavigate, Outlet } from "react-router"; // Fixed import
+import { useParams, useNavigate, Outlet } from "react-router";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,146 +8,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 
-// Mock data for proposals
-const proposalsByApp = {
-  bluemove: [
-    {
-      id: "1",
-      title: "Implement Royalty Fee Structure for NFT Creators",
-      endTime: "2023-12-15T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "2",
-      title: "Add Support for NFT Collections with Multiple Creators",
-      endTime: "2023-11-30T00:00:00Z",
-      status: "passed",
-    },
-    {
-      id: "3",
-      title: "Reduce Platform Fee from 2.5% to 2%",
-      endTime: "2023-11-20T00:00:00Z",
-      status: "failed",
-    },
-  ],
-  suiswap: [
-    {
-      id: "1",
-      title: "Add New Liquidity Pool for SUI/USDC",
-      endTime: "2023-12-20T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "2",
-      title: "Implement Fee Reduction for High Volume Traders",
-      endTime: "2023-12-05T00:00:00Z",
-      status: "active",
-    },
-  ],
-  cetus: [
-    {
-      id: "1",
-      title: "Upgrade to Concentrated Liquidity V2",
-      endTime: "2023-12-25T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "2",
-      title: "Add Support for Multiple Fee Tiers",
-      endTime: "2023-12-10T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "3",
-      title: "Implement Protocol Fee for Treasury",
-      endTime: "2023-11-28T00:00:00Z",
-      status: "passed",
-    },
-  ],
-  suins: [
-    {
-      id: "1",
-      title: "Add Support for Subdomain Registration",
-      endTime: "2023-12-18T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "2",
-      title: "Implement Domain Renewal Fee Structure",
-      endTime: "2023-11-25T00:00:00Z",
-      status: "passed",
-    },
-  ],
-  turbos: [
-    {
-      id: "1",
-      title: "Add New Trading Pairs for Perpetuals",
-      endTime: "2023-12-22T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "2",
-      title: "Implement Dynamic Funding Rate",
-      endTime: "2023-12-08T00:00:00Z",
-      status: "active",
-    },
-  ],
-  scallop: [
-    {
-      id: "1",
-      title: "Add Support for New Collateral Types",
-      endTime: "2023-12-30T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "2",
-      title: "Adjust Interest Rate Model Parameters",
-      endTime: "2023-12-15T00:00:00Z",
-      status: "active",
-    },
-    {
-      id: "3",
-      title: "Implement Liquidation Fee Reduction",
-      endTime: "2023-11-22T00:00:00Z",
-      status: "passed",
-    },
-  ],
+// Types
+interface Proposal {
+  id: number;
+  objectId: string;
+  creator: string;
+  title: string;
+  status: number;
+  votingEndsAt: string;
+  threshold: string;
+  yes: number;
+  no: number;
+  abstain: number;
+  executed: boolean;
+  governanceAddress: string;
+}
+
+// Status mapping
+const statusToText = {
+  0: "active",
+  1: "passed",
+  2: "failed",
 };
 
-// Helper function to get app name from ID
-const getAppName = (appId) => {
-  const appNames = {
-    bluemove: "BlueMove",
-    suiswap: "SuiSwap",
-    cetus: "Cetus",
-    suins: "SuiNS",
-    turbos: "Turbos",
-    scallop: "Scallop",
-  };
-  return appNames[appId] || appId;
-};
-
-// Helper function to format remaining time
-const formatTimeRemaining = (endTimeStr) => {
-  const endTime = new Date(endTimeStr);
-  const now = new Date();
-
-  if (endTime <= now) {
-    return "Ended";
-  }
-
-  const diffMs = endTime - now;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-  if (diffDays > 0) {
-    return `${diffDays}d ${diffHours}h remaining`;
-  }
-  return `${diffHours}h remaining`;
-};
-
-// Helper function to get status badge color
-const getStatusBadgeColor = (status) => {
+// Badge color helper
+const getStatusBadgeColor = (status: string) => {
   switch (status) {
     case "active":
       return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400";
@@ -159,19 +45,99 @@ const getStatusBadgeColor = (status) => {
   }
 };
 
+// Time remaining formatter
+const formatTimeRemaining = (endTimeStr: string) => {
+  const endTime = Math.floor(parseInt(endTimeStr) / 1000);
+  const now = Math.floor(Date.now() / 1000);
+
+  if (endTime <= now) return "Ended";
+
+  const diffMs = endTime - now;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor(
+    (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+  );
+
+  return diffDays > 0
+    ? `${diffDays}d ${diffHours}h remaining`
+    : `${diffHours}h remaining`;
+};
+
 export default function ProposalsPage() {
   const { app } = useParams();
   const navigate = useNavigate();
-  const proposals = proposalsByApp[app] || [];
-  const appName = getAppName(app);
+
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const API_URL =
+    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
+
+  useEffect(() => {
+    const fetchProposals = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/proposals`);
+        if (!response.ok)
+          throw new Error(`Failed to fetch proposals: ${response.statusText}`);
+        const result = await response.json();
+        const filtered = result.data.filter(
+          (p: Proposal) => p.governanceAddress === app,
+        );
+
+        setProposals(filtered);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (app) fetchProposals();
+  }, [API_URL, app]);
 
   const handleBack = () => {
     navigate("/governance");
   };
 
-  const handleViewDetails = (proposalId) => {
+  const handleViewDetails = (proposalId: string) => {
     navigate(`/governance/${app}/proposals/${proposalId}`);
   };
+
+  const appName = app || "Project";
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">Loading proposals...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md p-6 bg-destructive/10 rounded-lg">
+            <h2 className="text-lg font-bold text-destructive mb-2">
+              Error Loading Proposals
+            </h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -180,50 +146,60 @@ export default function ProposalsPage() {
         <section className="py-12 md:py-16">
           <div className="container px-4 md:px-6 mx-auto">
             <div className="mb-8">
-              <Button variant="ghost" className="mb-4 text-foreground hover:text-primary" onClick={handleBack}>
+              <Button
+                variant="ghost"
+                className="mb-4 text-foreground hover:text-primary"
+                onClick={handleBack}
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Governance
               </Button>
-              <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl">{appName} Proposals</h1>
-              <p className="mt-2 text-muted-foreground md:text-xl">View and vote on governance proposals for {appName}</p>
+              <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl">
+              </h1>
+              <p className="mt-2 text-muted-foreground md:text-xl">
+                View and vote on governance proposals for {appName.substring(0,8)} ... {appName.substring(appName.length - 8)}
+              </p>
             </div>
 
             <div className="space-y-4">
-              {proposals.map((proposal) => (
-                <Card key={proposal.id} className="overflow-hidden border-border bg-card">
-                  <CardHeader className="pb-2">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                      <CardTitle className="text-xl text-card-foreground">
-                        <span
-                          onClick={() => handleViewDetails(proposal.id)}
-                          className="hover:text-primary transition-colors cursor-pointer"
+              {proposals.map((proposal) => {
+                return (
+                  <Card
+                    key={proposal.id}
+                    className="overflow-hidden border-border bg-card"
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <CardTitle
+                          className="text-xl text-card-foreground hover:text-primary transition-colors cursor-pointer"
+                          onClick={() => handleViewDetails(proposal.objectId)}
                         >
                           {proposal.title}
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Clock className="mr-2 h-4 w-4" />
+                        <span>
+                          {formatTimeRemaining(proposal.votingEndsAt)}
                         </span>
-                      </CardTitle>
-                      <Badge className={`${getStatusBadgeColor(proposal.status)} capitalize`}>{proposal.status}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Clock className="mr-2 h-4 w-4" />
-                      <span>{formatTimeRemaining(proposal.endTime)}</span>
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                      <Button 
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground" 
-                        onClick={() => handleViewDetails(proposal.id)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground border border-zinc-300"
+                          onClick={() => handleViewDetails(proposal.objectId)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
-        <Outlet />
       </main>
       <Footer />
     </div>

@@ -28,9 +28,13 @@ app.get("/", async (req, res) => {
 
 app.get("/proposals", async (req, res) => {
   const acceptedQueries: WhereParam[] = [
-    {
+    { 
       key: "executed",
       type: WhereParamTypes.BOOLEAN,
+    },
+    { 
+      key: "objectId",
+      type: WhereParamTypes.STRING,
     },
     {
       key: "creator",

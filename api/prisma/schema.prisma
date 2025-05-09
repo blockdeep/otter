@@ -61,10 +61,10 @@ model Proposal {
   votes Vote[]
   executed Boolean @default(false)
 
-  governanceId   Int?     // Foreign key to GovernanceAddress
-  governance     GovernanceAddress? @relation(fields: [governanceId], references: [id])
+  governanceAddress String?
+  governance        GovernanceAddress? @relation(fields: [governanceAddress], references: [address])
 
-  @@index([governanceId])
+  @@index([governanceAddress])
 }
 
 model Vote {
@@ -85,13 +85,14 @@ model GovernanceAddress {
   projectName String
   createdAt   DateTime @default(now())
   details     String
-  active      Boolean  @default(true)  // To enable/disable addresses without deletion
+  active      Boolean  @default(true)
 
   proposals   Proposal[]
 
-  @@index([active])  // For filtering active addresses efficiently
+  @@index([active])
   @@index([projectName])
 }
+
 
 
 /// Saves the latest cursor for a given key.

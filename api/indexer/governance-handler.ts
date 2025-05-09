@@ -49,14 +49,14 @@ export const handleGovernanceObjects = async (
   type: string
 ) => {
   const updates: Record<string, Prisma.ProposalCreateInput> = {};
-  const governanceAddressCache: Record<string, number> = {};
+  const governanceAddressCache: Record<string, string> = {};
 
   const governanceAddresses = await prisma.governanceAddress.findMany({
-    select: { id: true, address: true },
+    select: { address: true },
   });
 
   for (const gov of governanceAddresses) {
-    governanceAddressCache[gov.address] = gov.id;
+    governanceAddressCache[gov.address] = gov.address;
   }
 
   for (const event of events) {
@@ -124,7 +124,7 @@ export const handleGovernanceObjects = async (
     updates[data.proposal_id].threshold = creationData.threshold;
     updates[data.proposal_id].governance = {
       connect: {
-        id: governanceAddressCache[governanceAddress],
+        address: governanceAddressCache[governanceAddress],
       },
     };
   }

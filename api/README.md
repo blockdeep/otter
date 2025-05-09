@@ -125,7 +125,7 @@ pnpm indexer
 
 
 ```bash
-SERVER_URL="http://localhost:3000"
+SERVER_URL="http://localhost:5000"
 
 # Define the parameters
 PASSWORD="roxxx"  # Replace with the password from your .env file
