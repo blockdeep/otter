@@ -6,7 +6,7 @@
  */
 export function extractModuleInfo(contractCode: string): any {
     // Extract module name and package
-    const moduleRegex = /module\s+([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+)\s*{/;
+    const moduleRegex = /module\s+([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+)/;
     const moduleMatch = contractCode.match(moduleRegex);
     
     if (!moduleMatch) {

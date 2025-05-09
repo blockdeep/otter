@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 /**
  * Parameter information for governable functions
@@ -32,6 +32,7 @@ export interface ProcessingResult {
   moduleInfo: ModuleInfo;
   governableActions: GovernableAction[];
   governanceContract: string;
+  governanceTokenContract: string; // Add this new field
 }
 
 /**
@@ -47,16 +48,19 @@ interface ApiResponse<T> {
  * Hook for contract processing integration
  */
 export function useContractProcessor() {
-  const [contractCode, setContractCode] = useState<string>('');
+  const [contractCode, setContractCode] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [detectedActions, setDetectedActions] = useState<GovernableAction[]>([]);
+  const [detectedActions, setDetectedActions] = useState<GovernableAction[]>(
+    [],
+  );
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   // API base URL - update this to match your server
-  const API_URL = import.meta.env.NEXT_PUBLIC_API_URL || 'http://localhost:50000/api';
-  
+  const API_URL =
+    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000/api";
+
   /**
    * Handle contract code input change
    */
@@ -67,139 +71,165 @@ export function useContractProcessor() {
       setResult(null);
       setError(null);
     }
-    
+
     // Reset detected actions and selections
     setDetectedActions([]);
     setSelectedActions([]);
   };
-  
+
   /**
    * Parse the contract to identify potential governable actions
    */
   const parseContract = async () => {
     if (!contractCode) {
-      setError('Please enter contract code');
+      setError("Please enter contract code");
       return;
     }
-    
+
     try {
       setIsProcessing(true);
       setError(null);
-      
+
       const response = await fetch(`${API_URL}/parse-contract`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contractCode
+          contractCode,
         }),
       });
-      
-      const data = await response.json() as ApiResponse<{
-        moduleInfo: ModuleInfo,
-        governableActions: GovernableAction[]
+
+      const data = (await response.json()) as ApiResponse<{
+        moduleInfo: ModuleInfo;
+        governableActions: GovernableAction[];
       }>;
-      
+
       if (!data.success) {
-        throw new Error(data.message || 'Error parsing contract');
+        throw new Error(data.message || "Error parsing contract");
       }
-      
+
       if (!data.data) {
-        throw new Error('No data returned from API');
+        throw new Error("No data returned from API");
       }
-      
+
       setDetectedActions(data.data.governableActions);
-      
+
       // Automatically select all actions by default
-      setSelectedActions(data.data.governableActions.map(action => action.name));
-      
+      setSelectedActions(
+        data.data.governableActions.map((action) => action.name),
+      );
     } catch (err) {
-      console.error('Error parsing contract:', err);
-      setError(err instanceof Error ? err.message : 'Failed to parse contract');
+      console.error("Error parsing contract:", err);
+      setError(err instanceof Error ? err.message : "Failed to parse contract");
     } finally {
       setIsProcessing(false);
     }
   };
-  
+
   /**
    * Toggle selection of a governable action
    */
   const toggleActionSelection = (actionName: string) => {
-    setSelectedActions(prev => {
+    setSelectedActions((prev) => {
       if (prev.includes(actionName)) {
-        return prev.filter(name => name !== actionName);
+        return prev.filter((name) => name !== actionName);
       } else {
         return [...prev, actionName];
       }
     });
   };
-  
+
   /**
    * Generate governance contract based on selected functions
    */
   const generateGovernanceContract = async () => {
     if (selectedActions.length === 0) {
-      setError('Please select at least one function to govern');
+      setError("Please select at least one function to govern");
       return;
     }
-    
+
     try {
       setIsProcessing(true);
       setError(null);
-      
+
       // Filter detected actions to only include selected ones
-      const actionsToInclude = detectedActions.filter(action => 
-        selectedActions.includes(action.name)
+      const actionsToInclude = detectedActions.filter((action) =>
+        selectedActions.includes(action.name),
       );
-      
+
       const response = await fetch(`${API_URL}/generate-governance`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           contractCode,
-          governableActions: actionsToInclude
+          governableActions: actionsToInclude,
         }),
       });
-      
-      const data = await response.json() as ApiResponse<ProcessingResult>;
-      
+
+      const data = (await response.json()) as ApiResponse<ProcessingResult>;
+
       if (!data.success) {
-        throw new Error(data.message || 'Error generating governance contract');
+        throw new Error(data.message || "Error generating governance contract");
       }
-      
+
       setResult(data.data || null);
     } catch (err) {
-      console.error('Error generating governance contract:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate governance contract');
+      console.error("Error generating governance contract:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to generate governance contract",
+      );
     } finally {
       setIsProcessing(false);
     }
   };
-  
+
   /**
-   * Download the generated governance contract
+   * Download the generated governance contracts
    */
-  const downloadGovernanceContract = () => {
+  const downloadGovernanceContracts = () => {
     if (!result?.governanceContract) {
-      setError('No governance contract available to download');
+      setError("No governance contract available to download");
       return;
     }
-    
-    const blob = new Blob([result.governanceContract], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    
-    a.href = url;
-    a.download = 'generated_governance.move';
-    document.body.appendChild(a);
-    a.click();
-    
+
+    // Download governance contract
+    const governanceBlob = new Blob([result.governanceContract], {
+      type: "text/plain",
+    });
+    const governanceUrl = URL.createObjectURL(governanceBlob);
+    const governanceLink = document.createElement("a");
+
+    governanceLink.href = governanceUrl;
+    governanceLink.download = `${result.moduleInfo.packageName}_governance.move`;
+    document.body.appendChild(governanceLink);
+    governanceLink.click();
+
     // Clean up
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    URL.revokeObjectURL(governanceUrl);
+    document.body.removeChild(governanceLink);
+
+    // Download token contract if available
+    if (result.governanceTokenContract) {
+      const tokenBlob = new Blob([result.governanceTokenContract], {
+        type: "text/plain",
+      });
+      const tokenUrl = URL.createObjectURL(tokenBlob);
+      const tokenLink = document.createElement("a");
+
+      tokenLink.href = tokenUrl;
+      tokenLink.download = `${result.moduleInfo.packageName}_govtoken.move`;
+      document.body.appendChild(tokenLink);
+      tokenLink.click();
+
+      // Clean up
+      URL.revokeObjectURL(tokenUrl);
+      document.body.removeChild(tokenLink);
+    }
   };
 
   return {
@@ -212,8 +242,8 @@ export function useContractProcessor() {
     handleContractCodeChange,
     parseContract,
     generateGovernanceContract,
-    downloadGovernanceContract,
-    toggleActionSelection
+    downloadGovernanceContracts,
+    toggleActionSelection,
   };
 }
 

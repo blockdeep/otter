@@ -7,6 +7,7 @@ import {
   identifyAllPotentialActions,
   identifyGovernableActions,
 } from "../services";
+import { generateGovernanceTokenContract } from "../services/governanceTokenGenerator";
 
 /**
  * Contract processor router
@@ -20,20 +21,17 @@ const router = express.Router();
 router.post("/parse-contract", async (req: Request, res: Response) => {
   try {
     const { contractCode } = req.body;
-
     if (!contractCode) {
       return res.status(400).json({
         success: false,
         message: "Missing contract code",
       });
     }
-
     // Extract module info from the contract
     const moduleInfo = extractModuleInfo(contractCode);
-
     // Identify all potential governable actions (public entry functions)
     const governableActions = identifyAllPotentialActions(contractCode);
-    
+
     // Return the result
     return res.status(200).json({
       success: true,
@@ -90,6 +88,9 @@ router.post("/generate-governance", async (req: Request, res: Response) => {
       contractCode
     );
 
+    // Generate matching governance token contract
+    const governanceTokenContract = generateGovernanceTokenContract(moduleInfo);
+
     // Return the result
     return res.status(200).json({
       success: true,
@@ -97,6 +98,7 @@ router.post("/generate-governance", async (req: Request, res: Response) => {
         moduleInfo,
         governableActions,
         governanceContract,
+        governanceTokenContract,
       },
     });
   } catch (error) {
@@ -116,17 +118,14 @@ router.post("/generate-governance", async (req: Request, res: Response) => {
 router.post("/process-contract", async (req: Request, res: Response) => {
   try {
     const { contractCode } = req.body;
-
     if (!contractCode) {
       return res.status(400).json({
         success: false,
         message: "Missing contract code",
       });
     }
-
     // Extract module info from the contract
     const moduleInfo = extractModuleInfo(contractCode);
-
     // Identify governable actions (using the original method)
     const governableActions = identifyGovernableActions(contractCode);
 
@@ -137,6 +136,9 @@ router.post("/process-contract", async (req: Request, res: Response) => {
       contractCode
     );
 
+    // Generate matching governance token contract
+    const governanceTokenContract = generateGovernanceTokenContract(moduleInfo);
+
     // Return the result
     return res.status(200).json({
       success: true,
@@ -144,6 +146,7 @@ router.post("/process-contract", async (req: Request, res: Response) => {
         moduleInfo,
         governableActions,
         governanceContract,
+        governanceTokenContract,
       },
     });
   } catch (error) {
