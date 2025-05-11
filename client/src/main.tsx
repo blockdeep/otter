@@ -14,6 +14,7 @@ import GovernancePage from "./governance/page.jsx";
 import ProposalsPage from "./governance/[app]/proposals/page.jsx";
 import ProposalDetailsPage from "./governance/[app]/proposals/[proposalId]/page.jsx";
 import LaunchGovernancePage from "./governance/launch/page.js";
+import CreateProposalPage from "./governance/[app]/proposals/create/page.js";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
   {
     path: "/governance/:app/proposals",
     element: <ProposalsPage />,
+  },
+  {
+    path: "/governance/:app/proposals/create",
+    element: <CreateProposalPage />,
   },
   {
     path: "/governance/:app/proposals/:proposalId",

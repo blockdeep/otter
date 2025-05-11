@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, PlusIcon } from "lucide-react";
 import { useParams, useNavigate, Outlet } from "react-router";
 import { useEffect, useState } from "react";
 
@@ -101,6 +101,10 @@ export default function ProposalsPage() {
     navigate("/governance");
   };
 
+  const handleCreateProposal = () => {
+    navigate("create");
+  };
+
   const handleViewDetails = (proposalId: string) => {
     navigate(`/governance/${app}/proposals/${proposalId}`);
   };
@@ -154,11 +158,23 @@ export default function ProposalsPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Governance
               </Button>
-              <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl">
-              </h1>
-              <p className="mt-2 text-muted-foreground md:text-xl">
-                View and vote on governance proposals for {appName.substring(0,8)} ... {appName.substring(appName.length - 8)}
-              </p>
+              <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl"></h1>
+              <div className="flex justify-between">
+                <p className="mt-2 text-muted-foreground md:text-xl">
+                  View and vote on governance proposals for{" "}
+                  {appName.substring(0, 8)} ...{" "}
+                  {appName.substring(appName.length - 8)}
+                </p>
+
+                <Button
+                  variant="outline"
+                  className="mb-4 text-foreground hover:text-primary"
+                  onClick={handleCreateProposal}
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Create proposal
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-4">
