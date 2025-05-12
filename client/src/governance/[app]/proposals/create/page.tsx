@@ -1,6 +1,6 @@
 import { ArrowLeft, Eye, Edit3 } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getGovernanceInfo } from "@/lib/RPC";
 
 export default function CreateProposalPage() {
   const { app } = useParams();
@@ -45,6 +46,22 @@ export default function CreateProposalPage() {
     isSuccess,
     isPending,
   } = useSignAndExecuteTransaction();
+
+  useEffect(() => {
+    const fetchGovernanceInfo = async () => {
+      if (!app) return;
+
+      const info = await getGovernanceInfo(app);
+      console.log(info);
+
+      if (info) {
+        console.log("Governance Module:", info.governanceModuleName);
+        console.log("Create Proposal Function:", info.createProposalFunction);
+        console.log("Proposal Kind Enum:", info.proposalKindEnum);
+      }
+    };
+    fetchGovernanceInfo();
+  }, [app]);
 
   const handleCreateProposal = () => {
     const tx = new Transaction();

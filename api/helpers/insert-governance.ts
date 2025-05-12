@@ -8,8 +8,8 @@ const prisma = new PrismaClient();
 
 // Define the governance address data
 const governanceData = {
-  address: "0x78f3c755b1d906864e4721dc887e59127553149a6f066acb45f6e37524925186",
-  projectName: "Simple Governance",
+  address: "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+  projectName: "Generic Governance",
   details: "Decentralized governance platform for Sui ecosystem projects",
   createdAt: new Date()
 };

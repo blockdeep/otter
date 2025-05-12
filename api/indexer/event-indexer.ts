@@ -6,8 +6,6 @@ import { EventId, SuiClient, SuiEvent, SuiEventFilter } from '@mysten/sui/client
 import { CONFIG } from '../config';
 import { prisma } from '../db';
 import { getClient } from '../sui-utils';
-import { handleEscrowObjects } from './escrow-handler';
-import { handleLockObjects } from './locked-handler';
 import { handleGovernanceObjects } from './governance-handler';
 
 type SuiEventsCursor = EventId | null | undefined;
