@@ -1,0 +1,1326 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "governance": {
+      "fileFormatVersion": 7,
+      "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+      "name": "governance",
+      "friends": [],
+      "structs": {
+        "GovernanceAdminCap": {
+          "abilities": { "abilities": ["Store", "Key"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "UID",
+                  "typeArguments": []
+                }
+              }
+            }
+          ]
+        },
+        "GovernanceSystem": {
+          "abilities": { "abilities": ["Key"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "UID",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "name": "proposals",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "table",
+                  "name": "Table",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0x2",
+                        "module": "object",
+                        "name": "ID",
+                        "typeArguments": []
+                      }
+                    },
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "governance",
+                        "name": "Proposal",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            { "name": "next_proposal_id", "type": "U64" },
+            { "name": "admin", "type": "Address" },
+            { "name": "total_token_supply", "type": "U64" }
+          ]
+        },
+        "Proposal": {
+          "abilities": { "abilities": ["Store", "Key"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "UID",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "creator", "type": "Address" },
+            {
+              "name": "title",
+              "type": {
+                "Struct": {
+                  "address": "0x1",
+                  "module": "string",
+                  "name": "String",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "name": "description",
+              "type": {
+                "Struct": {
+                  "address": "0x1",
+                  "module": "string",
+                  "name": "String",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "status", "type": "U8" },
+            {
+              "name": "kind",
+              "type": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "ProposalKind",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "yes_votes", "type": "U64" },
+            { "name": "no_votes", "type": "U64" },
+            { "name": "abstain_votes", "type": "U64" },
+            { "name": "total_voting_power", "type": "U64" },
+            {
+              "name": "voted",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "vec_map",
+                  "name": "VecMap",
+                  "typeArguments": ["Address", "Bool"]
+                }
+              }
+            },
+            { "name": "created_at", "type": "U64" },
+            { "name": "voting_ends_at", "type": "U64" }
+          ]
+        },
+        "ProposalCreated": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "proposal_id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "ID",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "creator", "type": "Address" },
+            {
+              "name": "title",
+              "type": {
+                "Struct": {
+                  "address": "0x1",
+                  "module": "string",
+                  "name": "String",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "voting_ends_at", "type": "U64" },
+            { "name": "threshold", "type": "U64" }
+          ]
+        },
+        "ProposalExecuted": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "proposal_id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "ID",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "executor", "type": "Address" }
+          ]
+        },
+        "ProposalStatusChanged": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "proposal_id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "ID",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "new_status", "type": "U8" }
+          ]
+        },
+        "VoteCast": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "proposal_id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "ID",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "voter", "type": "Address" },
+            { "name": "vote_type", "type": "U8" },
+            { "name": "voting_power", "type": "U64" }
+          ]
+        },
+        "VoteReceipt": {
+          "abilities": { "abilities": ["Store", "Key"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "UID",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "name": "proposal_id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "ID",
+                  "typeArguments": []
+                }
+              }
+            },
+            { "name": "voter", "type": "Address" },
+            { "name": "vote_type", "type": "U8" },
+            { "name": "voting_power", "type": "U64" }
+          ]
+        }
+      },
+      "enums": {
+        "ProposalKind": {
+          "abilities": { "abilities": ["Drop", "Store"] },
+          "typeParameters": [],
+          "variants": {
+            "Increment": [],
+            "SetValue": [{ "name": "value", "type": "U64" }]
+          }
+        }
+      },
+      "exposedFunctions": {
+        "add_execution_data": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [{ "abilities": ["Store"] }],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x1",
+                "module": "string",
+                "name": "String",
+                "typeArguments": []
+              }
+            },
+            { "TypeParameter": 0 },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "cancel_proposal": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "create_proposal": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "Coin",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x1",
+                "module": "string",
+                "name": "String",
+                "typeArguments": []
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x1",
+                "module": "string",
+                "name": "String",
+                "typeArguments": []
+              }
+            },
+            "U64",
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "clock",
+                  "name": "Clock",
+                  "typeArguments": []
+                }
+              }
+            },
+            "U8",
+            "U64",
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": [
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            }
+          ]
+        },
+        "execute_proposal": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd",
+                  "module": "simple_counter",
+                  "name": "Counter",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "finalize_proposal": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            },
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "clock",
+                  "name": "Clock",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "get_proposal_count": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": ["U64"]
+        },
+        "get_proposal_details": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            }
+          ],
+          "return": [
+            "Address",
+            {
+              "Struct": {
+                "address": "0x1",
+                "module": "string",
+                "name": "String",
+                "typeArguments": []
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x1",
+                "module": "string",
+                "name": "String",
+                "typeArguments": []
+              }
+            },
+            "U64",
+            "U64"
+          ]
+        },
+        "get_proposal_kind": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            }
+          ],
+          "return": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "ProposalKind",
+                  "typeArguments": []
+                }
+              }
+            }
+          ]
+        },
+        "get_proposal_status": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            }
+          ],
+          "return": ["U8"]
+        },
+        "get_proposal_threshold": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [],
+          "return": ["U64"]
+        },
+        "get_quorum_percentage": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [],
+          "return": ["U64"]
+        },
+        "get_voting_results": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            }
+          ],
+          "return": ["U64", "U64", "U64"]
+        },
+        "has_voted": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            },
+            "Address"
+          ],
+          "return": ["Bool"]
+        },
+        "update_admin": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceAdminCap",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            "Address"
+          ],
+          "return": []
+        },
+        "update_total_supply": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceAdminCap",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            "U64"
+          ],
+          "return": []
+        },
+        "vote": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "governance",
+                  "name": "GovernanceSystem",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "object",
+                "name": "ID",
+                "typeArguments": []
+              }
+            },
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "Coin",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "U8",
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "clock",
+                  "name": "Clock",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        }
+      }
+    },
+    "govtoken": {
+      "fileFormatVersion": 6,
+      "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+      "name": "govtoken",
+      "friends": [],
+      "structs": {
+        "AdminCap": {
+          "abilities": { "abilities": ["Store", "Key"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "UID",
+                  "typeArguments": []
+                }
+              }
+            }
+          ]
+        },
+        "CoinsBurned": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            { "name": "amount", "type": "U64" },
+            { "name": "burner", "type": "Address" }
+          ]
+        },
+        "CoinsMinted": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            { "name": "recipient", "type": "Address" },
+            { "name": "amount", "type": "U64" },
+            { "name": "minter", "type": "Address" }
+          ]
+        },
+        "CoinsTransferred": {
+          "abilities": { "abilities": ["Copy", "Drop"] },
+          "typeParameters": [],
+          "fields": [
+            { "name": "from", "type": "Address" },
+            { "name": "to", "type": "Address" },
+            { "name": "amount", "type": "U64" }
+          ]
+        },
+        "GOVTOKEN": {
+          "abilities": { "abilities": ["Drop"] },
+          "typeParameters": [],
+          "fields": [{ "name": "dummy_field", "type": "Bool" }]
+        },
+        "Treasury": {
+          "abilities": { "abilities": ["Key"] },
+          "typeParameters": [],
+          "fields": [
+            {
+              "name": "id",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "object",
+                  "name": "UID",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "name": "funds",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "balance",
+                  "name": "Balance",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0x2",
+                        "module": "sui",
+                        "name": "SUI",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "treasury_cap",
+              "type": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "TreasuryCap",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "exposedFunctions": {
+        "balance": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "Coin",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "return": ["U64"]
+        },
+        "borrow_treasury_cap": {
+          "visibility": "Public",
+          "isEntry": false,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "Treasury",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "TreasuryCap",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "burn_coins": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "AdminCap",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "Treasury",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "coin",
+                "name": "Coin",
+                "typeArguments": [
+                  {
+                    "Struct": {
+                      "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                      "module": "govtoken",
+                      "name": "GOVTOKEN",
+                      "typeArguments": []
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "deposit_sui": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "Treasury",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "coin",
+                "name": "Coin",
+                "typeArguments": [
+                  {
+                    "Struct": {
+                      "address": "0x2",
+                      "module": "sui",
+                      "name": "SUI",
+                      "typeArguments": []
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return": []
+        },
+        "join_coins": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "Coin",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "Struct": {
+                "address": "0x2",
+                "module": "coin",
+                "name": "Coin",
+                "typeArguments": [
+                  {
+                    "Struct": {
+                      "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                      "module": "govtoken",
+                      "name": "GOVTOKEN",
+                      "typeArguments": []
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return": []
+        },
+        "mint_coins": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "AdminCap",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "Treasury",
+                  "typeArguments": []
+                }
+              }
+            },
+            "U64",
+            "Address",
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "split_coin": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "Coin",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "U64",
+            "Address",
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "transfer_coins": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "coin",
+                  "name": "Coin",
+                  "typeArguments": [
+                    {
+                      "Struct": {
+                        "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                        "module": "govtoken",
+                        "name": "GOVTOKEN",
+                        "typeArguments": []
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "U64",
+            "Address",
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        },
+        "withdraw_funds": {
+          "visibility": "Public",
+          "isEntry": true,
+          "typeParameters": [],
+          "parameters": [
+            {
+              "Reference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "AdminCap",
+                  "typeArguments": []
+                }
+              }
+            },
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1",
+                  "module": "govtoken",
+                  "name": "Treasury",
+                  "typeArguments": []
+                }
+              }
+            },
+            "U64",
+            "Address",
+            {
+              "MutableReference": {
+                "Struct": {
+                  "address": "0x2",
+                  "module": "tx_context",
+                  "name": "TxContext",
+                  "typeArguments": []
+                }
+              }
+            }
+          ],
+          "return": []
+        }
+      }
+    }
+  }
+}

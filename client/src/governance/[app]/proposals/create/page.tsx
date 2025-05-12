@@ -1,6 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, Edit3 } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CreateProposalPage() {
   const { app } = useParams();
@@ -47,11 +50,10 @@ export default function CreateProposalPage() {
     const tx = new Transaction();
 
     tx.moveCall({
-  		arguments: [],
-  		target: `${app}::counter::create_proposal`,
-  	});
-
-  }
+      arguments: [],
+      target: `${app}::counter::create_proposal`,
+    });
+  };
 
   const handleBack = () => {
     navigate(`/governance/${app}/proposals`);
@@ -114,7 +116,7 @@ export default function CreateProposalPage() {
       <Navbar />
       <main className="flex-1">
         <section className="py-12 md:py-16">
-          <div className="container px-4 md:px-6 mx-auto max-w-3xl">
+          <div className="container px-4 md:px-6 mx-auto max-w-4xl">
             <div className="mb-8">
               <Button
                 variant="ghost"
@@ -161,14 +163,138 @@ export default function CreateProposalPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe the proposal in detail"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="min-h-32"
-                      required
-                    />
+                    <p className="text-sm text-muted-foreground">
+                      Write your proposal description using Markdown syntax. You
+                      can use formatting like **bold**, *italic*, lists, code
+                      blocks, and more.
+                    </p>
+                    <Tabs defaultValue="write" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger
+                          value="write"
+                          className="flex items-center gap-2"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          Write
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="preview"
+                          className="flex items-center gap-2"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Preview
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="write" className="mt-2">
+                        <Textarea
+                          id="description"
+                          placeholder="Describe the proposal in detail. You can use Markdown syntax:
+                            # Headers
+                            ## Subheaders
+
+                            **Bold text** and *italic text*
+
+                            - Bullet points
+                            - Another item
+
+                            1. Numbered lists
+                            2. Second item
+
+                            `inline code` blocks
+
+                            ```
+                            Code blocks
+                            ```
+
+                            [Links](https://example.com)
+                            "
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          className="min-h-64 font-mono"
+                          required
+                        />
+                      </TabsContent>
+                      <TabsContent value="preview" className="mt-2">
+                        <div className="min-h-64 p-4 border rounded-md bg-background prose prose-sm max-w-none prose prose-sm max-w-none dark:prose-invert">
+                          {description ? (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                h1: ({ children }) => (
+                                  <h1 className="text-2xl font-bold">
+                                    {children}
+                                  </h1>
+                                ),
+                                h2: ({ children }) => (
+                                  <h2 className="text-xl font-semibold">
+                                    {children}
+                                  </h2>
+                                ),
+                                h3: ({ children }) => (
+                                  <h3 className="text-lg font-medium">
+                                    {children}
+                                  </h3>
+                                ),
+                                p: ({ children }) => (
+                                  <p className="mb-4">{children}</p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="list-disc pl-6 mb-4">
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="list-decimal pl-6 mb-4">
+                                    {children}
+                                  </ol>
+                                ),
+                                li: ({ children }) => (
+                                  <li className="mb-1">{children}</li>
+                                ),
+                                code: ({ children }) => (
+                                  <code className="bg-muted px-1 py-0.5 rounded text-sm">
+                                    {children}
+                                  </code>
+                                ),
+                                pre: ({ children }) => (
+                                  <pre className="bg-muted p-4 rounded-md overflow-x-auto">
+                                    {children}
+                                  </pre>
+                                ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="border-l-4 border-primary pl-4 italic">
+                                    {children}
+                                  </blockquote>
+                                ),
+                                a: ({ href, children }) => (
+                                  <a
+                                    href={href}
+                                    className="text-primary hover:underline"
+                                  >
+                                    {children}
+                                  </a>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold">
+                                    {children}
+                                  </strong>
+                                ),
+                                em: ({ children }) => (
+                                  <em className="italic">{children}</em>
+                                ),
+                              }}
+                            >
+                              {description}
+                            </ReactMarkdown>
+                          ) : (
+                            <div className="text-muted-foreground italic">
+                              No description provided. Switch to the Write tab
+                              to add content.
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
