@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/footer";
@@ -25,6 +24,12 @@ import { Transaction } from "@mysten/sui/transactions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGovernanceInfo } from "@/lib/RPC";
 
+interface GovernanceInfo {
+  governanceModuleName: string;
+  createProposalFunction: any;
+  proposalKindEnum: any;
+}
+
 export default function CreateProposalPage() {
   const { app } = useParams();
   const navigate = useNavigate();
@@ -35,10 +40,21 @@ export default function CreateProposalPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [threshold, setThreshold] = useState("50"); // Default to 50%
-  const [votingPeriod, setVotingPeriod] = useState("3"); // Default to 3 days
+  const [threshold, setThreshold] = useState("50");
+  const [votingPeriod, setVotingPeriod] = useState("3");
+  const [proposalKind, setProposalKind] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+
+  // Governance info state
+  const [governanceInfo, setGovernanceInfo] = useState<GovernanceInfo | null>(
+    null,
+  );
+  const [additionalArgs, setAdditionalArgs] = useState<Record<string, string>>(
+    {},
+  );
+
   // SUI WORK
   const suiClient = useSuiClient();
   const {
@@ -51,25 +67,113 @@ export default function CreateProposalPage() {
     const fetchGovernanceInfo = async () => {
       if (!app) return;
 
-      const info = await getGovernanceInfo(app);
-      console.log(info);
+      try {
+        setLoading(true);
+        const info = await getGovernanceInfo(app);
 
-      if (info) {
-        console.log("Governance Module:", info.governanceModuleName);
-        console.log("Create Proposal Function:", info.createProposalFunction);
-        console.log("Proposal Kind Enum:", info.proposalKindEnum);
+        if (info) {
+          setGovernanceInfo(info);
+          console.log("Governance Module:", info.governanceModuleName);
+          console.log("Create Proposal Function:", info.createProposalFunction);
+          console.log("Proposal Kind Enum:", info.proposalKindEnum);
+
+          // Set default proposal kind if available
+          if (info.proposalKindEnum && info.proposalKindEnum.variants) {
+            const firstVariant = Object.keys(info.proposalKindEnum.variants)[0];
+            if (firstVariant) {
+              setProposalKind(firstVariant);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching governance info:", error);
+        setError("Failed to load governance information");
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchGovernanceInfo();
   }, [app]);
 
+  const formatParameterType = (parameter: any): string => {
+    if (typeof parameter === "string") {
+      return parameter;
+    }
+
+    if (parameter.Struct) {
+      return `${parameter.Struct.name}`;
+    }
+
+    if (parameter.Reference && parameter.Reference.Struct) {
+      return `&${parameter.Reference.Struct.name}`;
+    }
+
+    if (parameter.MutableReference && parameter.MutableReference.Struct) {
+      return `&mut ${parameter.MutableReference.Struct.name}`;
+    }
+
+    return JSON.stringify(parameter);
+  };
+
+  const getAdditionalParameters = () => {
+    if (!governanceInfo?.createProposalFunction?.parameters) return [];
+
+    // Skip the first 7 parameters (the standard ones)
+    return governanceInfo.createProposalFunction.parameters.slice(7);
+  };
+
+  const renderProposalKindFields = () => {
+    if (!governanceInfo?.proposalKindEnum?.variants || !proposalKind)
+      return null;
+
+    const selectedVariant =
+      governanceInfo.proposalKindEnum.variants[proposalKind];
+
+    if (!selectedVariant || selectedVariant.length === 0) return null;
+
+    return (
+      <div className="space-y-4 border-t pt-4 mt-4">
+        <Label className="text-sm font-medium">Proposal Kind Parameters</Label>
+        {selectedVariant.map((field: any, index: number) => (
+          <div key={index} className="space-y-2">
+            <Label htmlFor={`kind-${field.name}`}>{field.name}</Label>
+            <Input
+              id={`kind-${field.name}`}
+              placeholder={`Enter ${field.type} value`}
+              value={additionalArgs[`kind-${field.name}`] || ""}
+              onChange={(e) =>
+                setAdditionalArgs((prev) => ({
+                  ...prev,
+                  [`kind-${field.name}`]: e.target.value,
+                }))
+              }
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const handleCreateProposal = () => {
+    if (!governanceInfo) {
+      setError("Governance information not loaded");
+      return;
+    }
+
     const tx = new Transaction();
 
+    // Prepare arguments for the transaction
+    const args: any[] = [
+      // Add your arguments here based on the function signature
+    ];
+
     tx.moveCall({
-      arguments: [],
-      target: `${app}::counter::create_proposal`,
+      arguments: args,
+      target: `${app}::${governanceInfo.governanceModuleName}::create_proposal`,
     });
+
+    signAndExecute({ transaction: tx });
   };
 
   const handleBack = () => {
@@ -81,6 +185,11 @@ export default function CreateProposalPage() {
 
     if (!title.trim() || !description.trim()) {
       setError("Title and description are required");
+      return;
+    }
+
+    if (!proposalKind) {
+      setError("Proposal kind is required");
       return;
     }
 
@@ -128,6 +237,23 @@ export default function CreateProposalPage() {
 
   const appName = app || "Project";
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">
+              Loading governance information...
+            </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
@@ -147,8 +273,8 @@ export default function CreateProposalPage() {
                 Create Proposal
               </h1>
               <p className="mt-2 text-muted-foreground md:text-xl">
-                Create a new governance proposal for {appName.substring(0, 8)}{" "}
-                ... {appName.substring(appName.length - 8)}
+                Create a new governance proposal for {appName.substring(0, 8)}
+                ...{appName.substring(appName.length - 8)}
               </p>
             </div>
 
@@ -181,9 +307,7 @@ export default function CreateProposalPage() {
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
                     <p className="text-sm text-muted-foreground">
-                      Write your proposal description using Markdown syntax. You
-                      can use formatting like **bold**, *italic*, lists, code
-                      blocks, and more.
+                      Write your proposal description using Markdown syntax.
                     </p>
                     <Tabs defaultValue="write" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
@@ -205,26 +329,7 @@ export default function CreateProposalPage() {
                       <TabsContent value="write" className="mt-2">
                         <Textarea
                           id="description"
-                          placeholder="Describe the proposal in detail. You can use Markdown syntax:
-                            # Headers
-                            ## Subheaders
-
-                            **Bold text** and *italic text*
-
-                            - Bullet points
-                            - Another item
-
-                            1. Numbered lists
-                            2. Second item
-
-                            `inline code` blocks
-
-                            ```
-                            Code blocks
-                            ```
-
-                            [Links](https://example.com)
-                            "
+                          placeholder="Describe the proposal in detail..."
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           className="min-h-64 font-mono"
@@ -232,81 +337,14 @@ export default function CreateProposalPage() {
                         />
                       </TabsContent>
                       <TabsContent value="preview" className="mt-2">
-                        <div className="min-h-64 p-4 border rounded-md bg-background prose prose-sm max-w-none prose prose-sm max-w-none dark:prose-invert">
+                        <div className="min-h-64 p-4 border rounded-md bg-background prose prose-sm max-w-none dark:prose-invert">
                           {description ? (
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                h1: ({ children }) => (
-                                  <h1 className="text-2xl font-bold">
-                                    {children}
-                                  </h1>
-                                ),
-                                h2: ({ children }) => (
-                                  <h2 className="text-xl font-semibold">
-                                    {children}
-                                  </h2>
-                                ),
-                                h3: ({ children }) => (
-                                  <h3 className="text-lg font-medium">
-                                    {children}
-                                  </h3>
-                                ),
-                                p: ({ children }) => (
-                                  <p className="mb-4">{children}</p>
-                                ),
-                                ul: ({ children }) => (
-                                  <ul className="list-disc pl-6 mb-4">
-                                    {children}
-                                  </ul>
-                                ),
-                                ol: ({ children }) => (
-                                  <ol className="list-decimal pl-6 mb-4">
-                                    {children}
-                                  </ol>
-                                ),
-                                li: ({ children }) => (
-                                  <li className="mb-1">{children}</li>
-                                ),
-                                code: ({ children }) => (
-                                  <code className="bg-muted px-1 py-0.5 rounded text-sm">
-                                    {children}
-                                  </code>
-                                ),
-                                pre: ({ children }) => (
-                                  <pre className="bg-muted p-4 rounded-md overflow-x-auto">
-                                    {children}
-                                  </pre>
-                                ),
-                                blockquote: ({ children }) => (
-                                  <blockquote className="border-l-4 border-primary pl-4 italic">
-                                    {children}
-                                  </blockquote>
-                                ),
-                                a: ({ href, children }) => (
-                                  <a
-                                    href={href}
-                                    className="text-primary hover:underline"
-                                  >
-                                    {children}
-                                  </a>
-                                ),
-                                strong: ({ children }) => (
-                                  <strong className="font-semibold">
-                                    {children}
-                                  </strong>
-                                ),
-                                em: ({ children }) => (
-                                  <em className="italic">{children}</em>
-                                ),
-                              }}
-                            >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {description}
                             </ReactMarkdown>
                           ) : (
                             <div className="text-muted-foreground italic">
-                              No description provided. Switch to the Write tab
-                              to add content.
+                              No description provided.
                             </div>
                           )}
                         </div>
@@ -315,26 +353,6 @@ export default function CreateProposalPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="threshold">Passing Threshold (%)</Label>
-                      <Select value={threshold} onValueChange={setThreshold}>
-                        <SelectTrigger id="threshold">
-                          <SelectValue placeholder="Select threshold" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="50">
-                            50% (Simple Majority)
-                          </SelectItem>
-                          <SelectItem value="66">
-                            66% (Super Majority)
-                          </SelectItem>
-                          <SelectItem value="75">
-                            75% (High Consensus)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="votingPeriod">Voting Period (Days)</Label>
                       <Select
@@ -354,6 +372,56 @@ export default function CreateProposalPage() {
                     </div>
                   </div>
 
+                  {/* Proposal Kind Selection */}
+                  {governanceInfo?.proposalKindEnum && (
+                    <div className="space-y-2">
+                      <Label htmlFor="proposalKind">Proposal Kind</Label>
+                      <Select
+                        value={proposalKind}
+                        onValueChange={setProposalKind}
+                      >
+                        <SelectTrigger id="proposalKind">
+                          <SelectValue placeholder="Select proposal kind" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(
+                            governanceInfo.proposalKindEnum.variants,
+                          ).map((variant) => (
+                            <SelectItem key={variant} value={variant}>
+                              {variant}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {renderProposalKindFields()}
+                    </div>
+                  )}
+
+                  {/* Additional Parameters */}
+                  {getAdditionalParameters().length > 0 && (
+                    <div className="space-y-4">
+                      <Label className="text-sm font-medium">
+                        Additional Parameters
+                      </Label>
+                      {getAdditionalParameters().map((param, index) => (
+                        <div key={index} className="space-y-2">
+                          <Label htmlFor={`arg${index}`}>Arg{index}</Label>
+                          <Input
+                            id={`arg${index}`}
+                            placeholder={formatParameterType(param)}
+                            value={additionalArgs[`arg${index}`] || ""}
+                            onChange={(e) =>
+                              setAdditionalArgs((prev) => ({
+                                ...prev,
+                                [`arg${index}`]: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex justify-end pt-4">
                     <Button
                       type="button"
@@ -366,7 +434,7 @@ export default function CreateProposalPage() {
                     <Button
                       type="submit"
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                      disabled={submitting}
+                      disabled={submitting || loading}
                     >
                       {submitting ? "Creating..." : "Create Proposal"}
                     </Button>
