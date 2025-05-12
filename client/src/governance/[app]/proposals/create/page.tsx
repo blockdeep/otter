@@ -40,9 +40,10 @@ export default function CreateProposalPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [threshold, setThreshold] = useState("50");
-  const [votingPeriod, setVotingPeriod] = useState("3");
+  const [votingPeriodSeconds, setVotingPeriodSeconds] = useState("259200"); // Default 3 days
   const [proposalKind, setProposalKind] = useState<string>("");
+  const [governanceSystemId, setGovernanceSystemId] = useState("");
+  const [govTokenId, setGovTokenId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -73,9 +74,6 @@ export default function CreateProposalPage() {
 
         if (info) {
           setGovernanceInfo(info);
-          console.log("Governance Module:", info.governanceModuleName);
-          console.log("Create Proposal Function:", info.createProposalFunction);
-          console.log("Proposal Kind Enum:", info.proposalKindEnum);
 
           // Set default proposal kind if available
           if (info.proposalKindEnum && info.proposalKindEnum.variants) {
@@ -119,8 +117,36 @@ export default function CreateProposalPage() {
   const getAdditionalParameters = () => {
     if (!governanceInfo?.createProposalFunction?.parameters) return [];
 
-    // Skip the first 7 parameters (the standard ones)
-    return governanceInfo.createProposalFunction.parameters.slice(7);
+    // Skip the first 9 parameters and the last (TxContext)
+    // 0: &mut GovernanceSystem (handled by governanceSystemId)
+    // 1: &Coin<GOVTOKEN> (handled by govTokenId)
+    // 2: title (String)
+    // 3: description (String)
+    // 4: voting_period_seconds (u64)
+    // 5: &Clock (handled by SUI SDK)
+    // 6: proposal_kind (u8)
+    // 7: threshold (u64) - skip this
+    // 8+: additional parameters
+    const params = governanceInfo.createProposalFunction.parameters;
+    return params.slice(7, params.length - 1);
+  };
+
+  const formatTime = (seconds: number) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+    if (hours > 0) parts.push(`${hours} hour${hours !== 1 ? "s" : ""}`);
+    if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? "s" : ""}`);
+    if (remainingSeconds > 0 || parts.length === 0)
+      parts.push(
+        `${remainingSeconds} second${remainingSeconds !== 1 ? "s" : ""}`,
+      );
+
+    return parts.join(", ");
   };
 
   const renderProposalKindFields = () => {
@@ -134,10 +160,10 @@ export default function CreateProposalPage() {
 
     return (
       <div className="space-y-4 border-t pt-4 mt-4">
-        <Label className="text-sm font-medium">Proposal Kind Parameters</Label>
+        <Label className="text-sm font-medium text-foreground">Proposal Kind Parameters</Label>
         {selectedVariant.map((field: any, index: number) => (
           <div key={index} className="space-y-2">
-            <Label htmlFor={`kind-${field.name}`}>{field.name}</Label>
+            <Label htmlFor={`kind-${field.name}`} className="text-foreground">{field.name}</Label>
             <Input
               id={`kind-${field.name}`}
               placeholder={`Enter ${field.type} value`}
@@ -193,13 +219,22 @@ export default function CreateProposalPage() {
       return;
     }
 
+    if (!governanceSystemId) {
+      setError("Governance System ID is required");
+      return;
+    }
+
+    if (!govTokenId) {
+      setError("GOVTOKEN Coin ID is required");
+      return;
+    }
+
     try {
       setSubmitting(true);
       setError("");
 
-      // Calculate voting end time (current time + voting period in days)
-      const votingEndsAt =
-        Date.now() + parseInt(votingPeriod) * 24 * 60 * 60 * 1000;
+      // Calculate voting end time (current time + voting period in seconds)
+      const votingEndsAt = Date.now() + parseInt(votingPeriodSeconds) * 1000;
 
       const response = await fetch(`${API_URL}/proposals`, {
         method: "POST",
@@ -210,7 +245,6 @@ export default function CreateProposalPage() {
           governanceAddress: app,
           title,
           description,
-          threshold,
           votingEndsAt: votingEndsAt.toString(),
         }),
       });
@@ -294,6 +328,30 @@ export default function CreateProposalPage() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
+                    <Label htmlFor="governanceSystemId">
+                      Governance System ID
+                    </Label>
+                    <Input
+                      id="governanceSystemId"
+                      placeholder="Enter the governance system object ID (0x...)"
+                      value={governanceSystemId}
+                      onChange={(e) => setGovernanceSystemId(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="govTokenId">GOVTOKEN Coin ID</Label>
+                    <Input
+                      id="govTokenId"
+                      placeholder="Enter the governance token coin ID (0x...)"
+                      value={govTokenId}
+                      onChange={(e) => setGovTokenId(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
                     <Input
                       id="title"
@@ -352,30 +410,30 @@ export default function CreateProposalPage() {
                     </Tabs>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="votingPeriod">Voting Period (Days)</Label>
-                      <Select
-                        value={votingPeriod}
-                        onValueChange={setVotingPeriod}
-                      >
-                        <SelectTrigger id="votingPeriod">
-                          <SelectValue placeholder="Select voting period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 Day</SelectItem>
-                          <SelectItem value="3">3 Days</SelectItem>
-                          <SelectItem value="7">7 Days</SelectItem>
-                          <SelectItem value="14">14 Days</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="votingPeriod">
+                      Voting Period (Seconds)
+                    </Label>
+                    <Input
+                      id="votingPeriod"
+                      type="number"
+                      placeholder="Enter voting period in seconds"
+                      value={votingPeriodSeconds}
+                      onChange={(e) => setVotingPeriodSeconds(e.target.value)}
+                      required
+                    />
+                    {votingPeriodSeconds &&
+                      parseInt(votingPeriodSeconds) > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          Duration: {formatTime(parseInt(votingPeriodSeconds))}
+                        </p>
+                      )}
                   </div>
 
                   {/* Proposal Kind Selection */}
                   {governanceInfo?.proposalKindEnum && (
-                    <div className="space-y-2">
-                      <Label htmlFor="proposalKind">Proposal Kind</Label>
+                    <div className="space-y-2 text-black">
+                      <Label htmlFor="proposalKind" className="text-black">Proposal Kind</Label>
                       <Select
                         value={proposalKind}
                         onValueChange={setProposalKind}
@@ -383,7 +441,7 @@ export default function CreateProposalPage() {
                         <SelectTrigger id="proposalKind">
                           <SelectValue placeholder="Select proposal kind" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="text-black bg-white">
                           {Object.keys(
                             governanceInfo.proposalKindEnum.variants,
                           ).map((variant) => (
@@ -393,7 +451,6 @@ export default function CreateProposalPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {renderProposalKindFields()}
                     </div>
                   )}
 
