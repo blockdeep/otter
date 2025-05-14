@@ -2,7 +2,6 @@
 
 ## CONTRACTS
 
-
 ```bash
 export COUNTER_PACKAGE_ID=0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd
 export GOVERNANCE_PACKAGE_ID=0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1
@@ -11,7 +10,7 @@ export GOVERNANCE_PACKAGE_ID=0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596e
 ## STIMULATING GOVERNANCE.
 
 1. Create and Deploy a Counter
-First, let's create and deploy the counter:
+   First, let's create and deploy the counter:
 
 ```bash
 
@@ -22,12 +21,13 @@ sui client call --package $COUNTER_PACKAGE_ID --module simple_counter --function
 P.S: Note down the object created - this will be our counter object.
 
 In my case
+
 ```bash
 export COUNTER_OBJECT=0xb6d748c59faa061c1f0b452c42ec6632e5426332c1b05e44486f21f2c1ba87c3
 ```
 
 2. Initialize Governance System
-Fetch other details from the package. Including ADMIN_CAP_ID and GOVERNANCE_SYSTEM_ID.
+   Fetch other details from the package. Including ADMIN_CAP_ID and GOVERNANCE_SYSTEM_ID.
 
 For this view all the SUI objects created using `sui client objects`.
 
@@ -52,6 +52,7 @@ sui client call --package $GOVERNANCE_PACKAGE_ID --module govtoken --function mi
 ```
 
 Extract governance token id from the created objects.
+
 ```bash
 export GOV_TOKEN_ID=0x9777bb0fdb3a4181966abc7a7b2d1a3d54b06109a21edc20f3122b172d3bfc74
 ```
@@ -77,6 +78,7 @@ sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function 
 ```
 
 6.  Finalize the Proposal
+
 ```bash
 sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function finalize_proposal \
   --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID "0x6"\
@@ -89,4 +91,9 @@ sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function 
 sui client call --package $GOVERNANCE_PACKAGE_ID --module governance --function execute_proposal \
   --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID $COUNTER_OBJECT 42 \
   --gas-budget 10000000
+```
+
+```json
+Unable to process transaction
+Error checking transaction input objects: IncorrectUserSignature { error: "Object 0x9777bb0fdb3a4181966abc7a7b2d1a3d54b06109a21edc20f3122b172d3bfc74 is owned by account address 0xd400e9ad38603b5cb41c88b865bfdadd3e8855a3613cef083b20126c9b59a854, but given owner/signer address is 0x9b0418b6ca4112a68feaf8cbc1a27b2faead2135012c907b53499c469d440516" }
 ```

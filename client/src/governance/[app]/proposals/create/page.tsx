@@ -149,65 +149,13 @@ export default function CreateProposalPage() {
     return parts.join(", ");
   };
 
-  const renderProposalKindFields = () => {
-    if (!governanceInfo?.proposalKindEnum?.variants || !proposalKind)
-      return null;
+  const handleCreateProposal = (e: any) => {
+    e.preventDefault();
 
-    const selectedVariant =
-      governanceInfo.proposalKindEnum.variants[proposalKind];
-
-    if (!selectedVariant || selectedVariant.length === 0) return null;
-
-    return (
-      <div className="space-y-4 border-t pt-4 mt-4">
-        <Label className="text-sm font-medium text-foreground">Proposal Kind Parameters</Label>
-        {selectedVariant.map((field: any, index: number) => (
-          <div key={index} className="space-y-2">
-            <Label htmlFor={`kind-${field.name}`} className="text-foreground">{field.name}</Label>
-            <Input
-              id={`kind-${field.name}`}
-              placeholder={`Enter ${field.type} value`}
-              value={additionalArgs[`kind-${field.name}`] || ""}
-              onChange={(e) =>
-                setAdditionalArgs((prev) => ({
-                  ...prev,
-                  [`kind-${field.name}`]: e.target.value,
-                }))
-              }
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const handleCreateProposal = () => {
     if (!governanceInfo) {
       setError("Governance information not loaded");
       return;
     }
-
-    const tx = new Transaction();
-
-    // Prepare arguments for the transaction
-    const args: any[] = [
-      // Add your arguments here based on the function signature
-    ];
-
-    tx.moveCall({
-      arguments: args,
-      target: `${app}::${governanceInfo.governanceModuleName}::create_proposal`,
-    });
-
-    signAndExecute({ transaction: tx });
-  };
-
-  const handleBack = () => {
-    navigate(`/governance/${app}/proposals`);
-  };
-
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
 
     if (!title.trim() || !description.trim()) {
       setError("Title and description are required");
@@ -229,44 +177,94 @@ export default function CreateProposalPage() {
       return;
     }
 
-    try {
-      setSubmitting(true);
-      setError("");
+    const tx = new Transaction();
 
-      // Calculate voting end time (current time + voting period in seconds)
-      const votingEndsAt = Date.now() + parseInt(votingPeriodSeconds) * 1000;
+    const proposalKindInt = Object.keys(
+      governanceInfo?.proposalKindEnum.variants,
+    ).indexOf(proposalKind);
 
-      const response = await fetch(`${API_URL}/proposals`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          governanceAddress: app,
-          title,
-          description,
-          votingEndsAt: votingEndsAt.toString(),
-        }),
-      });
+    // Prepare arguments for the transaction based on the function signature
+    const args: any[] = [
+      tx.object(governanceSystemId), // &mut GovernanceSystem
+      tx.object(govTokenId), // &Coin<GOVTOKEN>
+      tx.pure.string(title), // title: String
+      tx.pure.string(description), // description: String
+      tx.pure.u64(parseInt(votingPeriodSeconds)), // voting_period_seconds: u64
+      tx.object("0x6"), // &Clock (SUI system object)
+      tx.pure.u8(proposalKindInt), // proposal_kind: u8 (enum variant)
+    ];
 
-      if (!response.ok) {
-        throw new Error(`Failed to create proposal: ${response.statusText}`);
+    // Add additional parameters if they exist
+    const additionalParams = getAdditionalParameters();
+    additionalParams.forEach((param: string, index: number) => {
+      const value = additionalArgs[`arg${index}`];
+      if (value) {
+        // Parse the value based on parameter type
+        if (param.includes("u64")) {
+          args.push(tx.pure.u64(parseInt(value)));
+        } else if (param.includes("u32")) {
+          args.push(tx.pure.u32(parseInt(value)));
+        } else if (param.includes("u8")) {
+          args.push(tx.pure.u8(parseInt(value)));
+        } else if (param.includes("String")) {
+          args.push(tx.pure.string(value));
+        } else if (param.includes("bool")) {
+          args.push(tx.pure.bool(value === "true"));
+        } else {
+          // For object references
+          args.push(tx.object(value));
+        }
       }
+    });
 
-      const result = await response.json();
+    tx.moveCall({
+      arguments: args,
+      target: `${app}::${governanceInfo.governanceModuleName}::create_proposal`,
+    });
 
-      toast({
-        title: "Proposal Created",
-        description: "Your governance proposal has been successfully created.",
-      });
+    signAndExecute(
+      {
+        transaction: tx,
+      },
+      {
+        onSuccess: async ({ digest }) => {
+          const { effects } = await suiClient.waitForTransaction({
+            digest: digest,
+            options: {
+              showEffects: true,
+            },
+          });
 
-      // Redirect to the proposals list
-      navigate(`/governance/${app}/proposals`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error occurred");
-    } finally {
-      setSubmitting(false);
-    }
+          console.log("Efffects of transasction", effects);
+
+          toast({
+            title: "Proposal Created",
+            description:
+              "Your governance proposal has been successfully created.",
+          });
+
+          // Reset form
+          setTitle("");
+          setDescription("");
+          setVotingPeriodSeconds("259200");
+          setProposalKind("");
+          setGovernanceSystemId("");
+          setGovTokenId("");
+          setAdditionalArgs({});
+
+          // Navigate to proposals list
+          navigate(`/governance/${app}/proposals`);
+        },
+        onError: (error) => {
+          setError(error.message || "Failed to create proposal");
+          console.error("Error creating proposal:", error);
+        },
+      },
+    );
+  };
+
+  const handleBack = () => {
+    navigate(`/governance/${app}/proposals`);
   };
 
   const appName = app || "Project";
@@ -326,7 +324,7 @@ export default function CreateProposalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleCreateProposal} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="governanceSystemId">
                       Governance System ID
@@ -433,7 +431,9 @@ export default function CreateProposalPage() {
                   {/* Proposal Kind Selection */}
                   {governanceInfo?.proposalKindEnum && (
                     <div className="space-y-2 text-black">
-                      <Label htmlFor="proposalKind" className="text-black">Proposal Kind</Label>
+                      <Label htmlFor="proposalKind" className="text-black">
+                        Proposal Kind
+                      </Label>
                       <Select
                         value={proposalKind}
                         onValueChange={setProposalKind}
@@ -460,22 +460,24 @@ export default function CreateProposalPage() {
                       <Label className="text-sm font-medium">
                         Additional Parameters
                       </Label>
-                      {getAdditionalParameters().map((param, index) => (
-                        <div key={index} className="space-y-2">
-                          <Label htmlFor={`arg${index}`}>Arg{index}</Label>
-                          <Input
-                            id={`arg${index}`}
-                            placeholder={formatParameterType(param)}
-                            value={additionalArgs[`arg${index}`] || ""}
-                            onChange={(e) =>
-                              setAdditionalArgs((prev) => ({
-                                ...prev,
-                                [`arg${index}`]: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                      ))}
+                      {getAdditionalParameters().map(
+                        (param: string, index: number) => (
+                          <div key={index} className="space-y-2">
+                            <Label htmlFor={`arg${index}`}>Arg{index}</Label>
+                            <Input
+                              id={`arg${index}`}
+                              placeholder={formatParameterType(param)}
+                              value={additionalArgs[`arg${index}`] || ""}
+                              onChange={(e) =>
+                                setAdditionalArgs((prev) => ({
+                                  ...prev,
+                                  [`arg${index}`]: e.target.value,
+                                }))
+                              }
+                            />
+                          </div>
+                        ),
+                      )}
                     </div>
                   )}
 
