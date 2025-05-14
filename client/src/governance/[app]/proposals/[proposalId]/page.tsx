@@ -1,4 +1,12 @@
-import { ArrowLeft, Calendar, Clock, ThumbsDown, ThumbsUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  ThumbsDown,
+  ThumbsUp,
+  CheckCircle,
+  Play,
+} from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
@@ -24,7 +32,7 @@ interface Proposal {
   creator: string;
   executed: boolean;
   governanceAddress: string;
-  status: string | null;
+  status: number | null;
   threshold: string;
   votingEndsAt: string;
   yes: number;
@@ -38,18 +46,6 @@ interface GovernanceInfo {
   proposalKindEnum: any;
 }
 
-const getAppName = (appId: string) => {
-  const appNames: Record<string, string> = {
-    bluemove: "BlueMove",
-    suiswap: "SuiSwap",
-    cetus: "Cetus",
-    suins: "SuiNS",
-    turbos: "Turbos",
-    scallop: "Scallop",
-  };
-  return appNames[appId] || appId;
-};
-
 const formatDate = (ms: number) => {
   const date = new Date(ms);
   return date.toLocaleDateString("en-US", {
@@ -61,16 +57,44 @@ const formatDate = (ms: number) => {
   });
 };
 
-const getStatusBadgeColor = (status: string) => {
+// Status constants matching the Move contract
+const PROPOSAL_STATUS_ACTIVE = 0;
+const PROPOSAL_STATUS_PASSED = 1;
+const PROPOSAL_STATUS_REJECTED = 2;
+const PROPOSAL_STATUS_EXECUTED = 3;
+const PROPOSAL_STATUS_CANCELLED = 4;
+
+const getStatusBadgeColor = (status: number) => {
   switch (status) {
-    case "active":
+    case PROPOSAL_STATUS_ACTIVE:
       return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400";
-    case "passed":
+    case PROPOSAL_STATUS_PASSED:
       return "bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20";
-    case "failed":
+    case PROPOSAL_STATUS_REJECTED:
       return "bg-destructive/10 text-destructive hover:bg-destructive/20 dark:bg-destructive/20";
+    case PROPOSAL_STATUS_EXECUTED:
+      return "bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400";
+    case PROPOSAL_STATUS_CANCELLED:
+      return "bg-gray-100 text-gray-800 hover:bg-gray-100 dark:bg-gray-900/30 dark:text-gray-400";
     default:
       return "bg-secondary text-secondary-foreground hover:bg-secondary/80";
+  }
+};
+
+const getStatusLabel = (status: number) => {
+  switch (status) {
+    case PROPOSAL_STATUS_ACTIVE:
+      return "Active";
+    case PROPOSAL_STATUS_PASSED:
+      return "Passed";
+    case PROPOSAL_STATUS_REJECTED:
+      return "Rejected";
+    case PROPOSAL_STATUS_EXECUTED:
+      return "Executed";
+    case PROPOSAL_STATUS_CANCELLED:
+      return "Cancelled";
+    default:
+      return "Unknown";
   }
 };
 
@@ -83,9 +107,14 @@ export default function ProposalDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
+  const [executing, setExecuting] = useState(false);
   const [governanceSystemId, setGovernanceSystemId] = useState("");
   const [govTokenId, setGovTokenId] = useState("");
+  const [counterObjectId, setCounterObjectId] = useState("");
   const [showVoteInputs, setShowVoteInputs] = useState(false);
+  const [showFinalizeInputs, setShowFinalizeInputs] = useState(false);
+  const [showExecuteInputs, setShowExecuteInputs] = useState(false);
   const [selectedVoteType, setSelectedVoteType] = useState<string>("");
   const [governanceInfo, setGovernanceInfo] = useState<GovernanceInfo | null>(
     null,
@@ -113,6 +142,9 @@ export default function ProposalDetailsPage() {
         const data = await res.json();
         const fetched = data?.data?.[0];
         if (!fetched) throw new Error("Proposal not found.");
+
+        console.log(fetched);
+
         setProposal(fetched);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
@@ -141,6 +173,32 @@ export default function ProposalDetailsPage() {
 
   const handleBack = () => {
     navigate(`/governance/${app}/proposals`);
+  };
+
+  // Helper function to determine proposal state
+  const getProposalState = () => {
+    if (!proposal) return null;
+
+    const now = Date.now();
+    const votingEndsAt = Number(proposal.votingEndsAt);
+    const hasTimeEnded = now > votingEndsAt;
+    const status = proposal.status;
+
+    if (status === PROPOSAL_STATUS_ACTIVE && !hasTimeEnded) {
+      return { state: "voting", label: "Active - Voting" };
+    } else if (status === PROPOSAL_STATUS_ACTIVE && hasTimeEnded) {
+      return { state: "finalize", label: "Ready to Finalize" };
+    } else if (status === PROPOSAL_STATUS_PASSED) {
+      return { state: "execute", label: "Passed - Ready to Execute" };
+    } else if (status === PROPOSAL_STATUS_EXECUTED) {
+      return { state: "executed", label: "Executed" };
+    } else if (status === PROPOSAL_STATUS_REJECTED) {
+      return { state: "rejected", label: "Rejected" };
+    } else if (status === PROPOSAL_STATUS_CANCELLED) {
+      return { state: "cancelled", label: "Cancelled" };
+    }
+
+    return { state: "unknown", label: getStatusLabel(status || 0) };
   };
 
   const handleVoteClick = (type: string) => {
@@ -259,6 +317,178 @@ export default function ProposalDetailsPage() {
     );
   };
 
+  const handleFinalizeProposal = () => {
+    if (!governanceInfo) {
+      setError("Governance information not loaded");
+      return;
+    }
+
+    if (!governanceSystemId) {
+      setError("Governance System ID is required");
+      return;
+    }
+
+    if (!proposalId) {
+      setError("Proposal ID is required");
+      return;
+    }
+
+    setFinalizing(true);
+
+    const tx = new Transaction();
+
+    const args = [
+      tx.object(governanceSystemId), // &mut GovernanceSystem
+      tx.object(proposalId), // proposal_id: ID
+      tx.object("0x6"), // &Clock (SUI system object)
+    ];
+
+    tx.moveCall({
+      arguments: args,
+      target: `${app}::${governanceInfo.governanceModuleName}::finalize_proposal`,
+    });
+
+    signAndExecute(
+      {
+        transaction: tx,
+      },
+      {
+        onSuccess: async ({ digest }) => {
+          const { effects } = await suiClient.waitForTransaction({
+            digest: digest,
+            options: {
+              showEffects: true,
+            },
+          });
+
+          console.log("Finalize transaction effects:", effects);
+
+          toast({
+            title: "Proposal Finalized",
+            description: "The proposal has been successfully finalized.",
+          });
+
+          // Reset finalize inputs
+          setShowFinalizeInputs(false);
+          setGovernanceSystemId("");
+
+          // Refresh proposal data
+          const res = await fetch(
+            `${API_URL}/proposals?objectId=${proposalId}`,
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const fetched = data?.data?.[0];
+            if (fetched) {
+              setProposal(fetched);
+            }
+          }
+        },
+        onError: (error) => {
+          console.error("Error finalizing proposal:", error);
+          setError(error.message || "Failed to finalize proposal");
+          toast({
+            title: "Finalization Failed",
+            description: error.message || "Failed to finalize proposal",
+            variant: "destructive",
+          });
+        },
+        onSettled: () => {
+          setFinalizing(false);
+        },
+      },
+    );
+  };
+
+  const handleExecuteProposal = () => {
+    if (!governanceInfo) {
+      setError("Governance information not loaded");
+      return;
+    }
+
+    if (!governanceSystemId) {
+      setError("Governance System ID is required");
+      return;
+    }
+
+    if (!counterObjectId) {
+      setError("Counter Object ID is required for execution");
+      return;
+    }
+
+    if (!proposalId) {
+      setError("Proposal ID is required");
+      return;
+    }
+
+    setExecuting(true);
+
+    const tx = new Transaction();
+
+    const args = [
+      tx.object(governanceSystemId), // &mut GovernanceSystem
+      tx.object(proposalId), // proposal_id: ID
+      tx.object(counterObjectId), // &mut Counter (specific to the contract being governed)
+    ];
+
+    tx.moveCall({
+      arguments: args,
+      target: `${app}::${governanceInfo.governanceModuleName}::execute_proposal`,
+    });
+
+    signAndExecute(
+      {
+        transaction: tx,
+      },
+      {
+        onSuccess: async ({ digest }) => {
+          const { effects } = await suiClient.waitForTransaction({
+            digest: digest,
+            options: {
+              showEffects: true,
+            },
+          });
+
+          console.log("Execute transaction effects:", effects);
+
+          toast({
+            title: "Proposal Executed",
+            description: "The proposal has been successfully executed!",
+          });
+
+          // Reset execute inputs
+          setShowExecuteInputs(false);
+          setGovernanceSystemId("");
+          setCounterObjectId("");
+
+          // Refresh proposal data
+          const res = await fetch(
+            `${API_URL}/proposals?objectId=${proposalId}`,
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const fetched = data?.data?.[0];
+            if (fetched) {
+              setProposal(fetched);
+            }
+          }
+        },
+        onError: (error) => {
+          console.error("Error executing proposal:", error);
+          setError(error.message || "Failed to execute proposal");
+          toast({
+            title: "Execution Failed",
+            description: error.message || "Failed to execute proposal",
+            variant: "destructive",
+          });
+        },
+        onSettled: () => {
+          setExecuting(false);
+        },
+      },
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -299,8 +529,8 @@ export default function ProposalDetailsPage() {
 
   const totalVotes = proposal.yes + proposal.no + proposal.abstain || 1;
   const percent = (v: number) => Math.round((v / totalVotes) * 100);
-  const status = proposal.status ?? "active";
   const formattedEndTime = formatDate(Number(proposal.votingEndsAt));
+  const proposalState = getProposalState();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -321,8 +551,10 @@ export default function ProposalDetailsPage() {
                 <h1 className="text-2xl font-bold tracking-tighter text-foreground sm:text-3xl md:text-4xl">
                   {proposal.title}
                 </h1>
-                <Badge className={`${getStatusBadgeColor(status)} capitalize`}>
-                  {status}
+                <Badge
+                  className={`${getStatusBadgeColor(proposal.status || 0)} capitalize`}
+                >
+                  {proposalState?.label}
                 </Badge>
               </div>
             </div>
@@ -414,7 +646,8 @@ export default function ProposalDetailsPage() {
                   </div>
                 </div>
 
-                {status === "active" && (
+                {/* Action buttons based on proposal state */}
+                {proposalState?.state === "voting" && (
                   <div className="pt-4">
                     <h3 className="font-medium mb-4 text-card-foreground">
                       Cast Your Vote
@@ -510,6 +743,173 @@ export default function ProposalDetailsPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Finalize Proposal */}
+                {proposalState?.state === "finalize" && (
+                  <div className="pt-4">
+                    <h3 className="font-medium mb-4 text-card-foreground">
+                      Finalize Proposal
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Voting period has ended. Finalize this proposal to
+                      determine if it passed or failed.
+                    </p>
+
+                    {!showFinalizeInputs && (
+                      <Button
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => setShowFinalizeInputs(true)}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" /> Finalize
+                        Proposal
+                      </Button>
+                    )}
+
+                    {showFinalizeInputs && (
+                      <div className="space-y-4 border rounded-lg p-4 bg-background">
+                        <div className="space-y-2">
+                          <Label htmlFor="finalizeGovernanceSystemId">
+                            Governance System ID
+                          </Label>
+                          <Input
+                            id="finalizeGovernanceSystemId"
+                            placeholder="Enter the governance system object ID (0x...)"
+                            value={governanceSystemId}
+                            onChange={(e) =>
+                              setGovernanceSystemId(e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div className="flex gap-4">
+                          <Button
+                            onClick={handleFinalizeProposal}
+                            disabled={finalizing || !governanceSystemId}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            {finalizing ? "Finalizing..." : "Confirm Finalize"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowFinalizeInputs(false);
+                              setGovernanceSystemId("");
+                              setError(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Execute Proposal */}
+                {proposalState?.state === "execute" && (
+                  <div className="pt-4">
+                    <h3 className="font-medium mb-4 text-card-foreground">
+                      Execute Proposal
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      This proposal has passed and is ready to be executed. This
+                      will perform the proposed action.
+                    </p>
+
+                    {!showExecuteInputs && (
+                      <Button
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => setShowExecuteInputs(true)}
+                      >
+                        <Play className="mr-2 h-4 w-4" /> Execute Proposal
+                      </Button>
+                    )}
+
+                    {showExecuteInputs && (
+                      <div className="space-y-4 border rounded-lg p-4 bg-background">
+                        <div className="space-y-2">
+                          <Label htmlFor="executeGovernanceSystemId">
+                            Governance System ID
+                          </Label>
+                          <Input
+                            id="executeGovernanceSystemId"
+                            placeholder="Enter the governance system object ID (0x...)"
+                            value={governanceSystemId}
+                            onChange={(e) =>
+                              setGovernanceSystemId(e.target.value)
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="counterObjectId">
+                            Counter Object ID
+                          </Label>
+                          <Input
+                            id="counterObjectId"
+                            placeholder="Enter the counter object ID that this proposal will modify (0x...)"
+                            value={counterObjectId}
+                            onChange={(e) => setCounterObjectId(e.target.value)}
+                            required
+                          />
+                        </div>
+
+                        <div className="flex gap-4">
+                          <Button
+                            onClick={handleExecuteProposal}
+                            disabled={
+                              executing ||
+                              !governanceSystemId ||
+                              !counterObjectId
+                            }
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {executing ? "Executing..." : "Confirm Execute"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowExecuteInputs(false);
+                              setGovernanceSystemId("");
+                              setCounterObjectId("");
+                              setError(null);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Information for completed states */}
+                {proposalState?.state === "executed" && (
+                  <div className="pt-4">
+                    <Alert>
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertTitle>Proposal Executed</AlertTitle>
+                      <AlertDescription>
+                        This proposal has been successfully executed and the
+                        proposed changes have been implemented.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+
+                {proposalState?.state === "rejected" && (
+                  <div className="pt-4">
+                    <Alert variant="destructive">
+                      <AlertTitle>Proposal Rejected</AlertTitle>
+                      <AlertDescription>
+                        This proposal was rejected either due to insufficient
+                        votes or failing to meet the required threshold.
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 )}
               </CardContent>

@@ -23,6 +23,7 @@ import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGovernanceInfo } from "@/lib/RPC";
+import Walrus from "@/lib/Walrus";
 
 interface GovernanceInfo {
   governanceModuleName: string;
@@ -149,7 +150,7 @@ export default function CreateProposalPage() {
     return parts.join(", ");
   };
 
-  const handleCreateProposal = (e: any) => {
+  const handleCreateProposal = async (e: any) => {
     e.preventDefault();
 
     if (!governanceInfo) {
@@ -183,12 +184,36 @@ export default function CreateProposalPage() {
       governanceInfo?.proposalKindEnum.variants,
     ).indexOf(proposalKind);
 
+    const uploadResponse = await Walrus.uploadText(description, {
+      epochs: 2,      // Store for 2 epochs
+      deletable: true // Make the blob deletable
+    });
+    
+    if (!uploadResponse.newlyCreated && !uploadResponse.alreadyCertified) {
+      throw new Error('Upload failed: No blob information returned');
+    }
+    
+    // Determine if this is a new blob or an already existing one
+    const isNewBlob = !!uploadResponse.newlyCreated;
+    
+    // Get the blob ID
+    const blobId = isNewBlob 
+      ? uploadResponse.newlyCreated?.blobObject.blobId 
+      : uploadResponse.alreadyCertified?.blobId;
+    
+    if (!blobId) {
+      throw new Error('Failed to get blob ID from response');
+    }
+    
+    console.log(`\nUpload ${isNewBlob ? 'completed (new blob)' : 'found existing blob'}`);
+    console.log(`Blob ID: ${blobId}`);
+
     // Prepare arguments for the transaction based on the function signature
     const args: any[] = [
       tx.object(governanceSystemId), // &mut GovernanceSystem
       tx.object(govTokenId), // &Coin<GOVTOKEN>
       tx.pure.string(title), // title: String
-      tx.pure.string(description), // description: String
+      tx.pure.string(blobId), // description: String
       tx.pure.u64(parseInt(votingPeriodSeconds)), // voting_period_seconds: u64
       tx.object("0x6"), // &Clock (SUI system object)
       tx.pure.u8(proposalKindInt), // proposal_kind: u8 (enum variant)
