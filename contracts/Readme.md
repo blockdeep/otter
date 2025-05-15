@@ -7,7 +7,7 @@ export COUNTER_PACKAGE_ID=0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de3
 export GOVERNANCE_PACKAGE_ID=0xbafd0541bbeac9bb05ffd13c54ef77904667675fc7ac8596ef2b8616ccba94e1
 ```
 
-## STIMULATING GOVERNANCE.
+## SIMULATING GOVERNANCE.
 
 1. Create and Deploy a Counter
    First, let's create and deploy the counter:

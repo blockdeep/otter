@@ -184,6 +184,8 @@ export default function ProposalDetailsPage() {
     const hasTimeEnded = now > votingEndsAt;
     const status = proposal.status;
 
+    console.log(status);
+    
     if (status === PROPOSAL_STATUS_ACTIVE && !hasTimeEnded) {
       return { state: "voting", label: "Active - Voting" };
     } else if (status === PROPOSAL_STATUS_ACTIVE && hasTimeEnded) {
@@ -531,6 +533,9 @@ export default function ProposalDetailsPage() {
   const percent = (v: number) => Math.round((v / totalVotes) * 100);
   const formattedEndTime = formatDate(Number(proposal.votingEndsAt));
   const proposalState = getProposalState();
+
+console.log(proposalState);
+
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

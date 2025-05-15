@@ -112,6 +112,7 @@ module generic_governor::governance {
         proposal_id: ID,
         creator: address,
         title: String,
+        description: String,
         voting_ends_at: u64,
         threshold: u64,
     }
@@ -238,6 +239,7 @@ module generic_governor::governance {
             proposal_id,
             creator,
             title,
+            description,
             voting_ends_at: voting_ends_at_ms,
             threshold: MIN_PROPOSAL_THRESHOLD,
         });

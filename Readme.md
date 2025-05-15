@@ -28,54 +28,50 @@ In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. O
 
 ## 🚀 Getting Started
 
-### Frontend (Coming Soon)
+
+### Frontend
 - A governance dashboard to:
   - View all dApp governance.
   - Create and manage proposals.
   - Vote and track proposal outcomes.
 
-### Manual Onboarding (MVP Phase)
-Due to the limitations of dynamic dispatch on Sui, onboarding is manual for now. 
+~~### Manual Onboarding (MVP Phase)
+Due to the limitations of dynamic dispatch on Sui, onboarding is manual for now.~~
 
-#### Onboarding Flow:
-1. Project Discovery & Outreach
-2. Initial Contact & Demo with the OTTER team
-3. Governance Fit Assessment
-4. Onboarding Agreement (Paid)
-5. Manual Setup of Governance Contracts + Walrus Storage
-6. Integration Support (Frontend/API)
-7. Live Launch of Governance
 
----
+### LAUNCH GOVERNANCE 
+ - In the short while of the hackathon we've managed to build a contract creator for app contracts.
+ - Create your own governance contract with three easy steps:
+    1. Upload your App contract (in move language).
+    2. Choose the functions you want to include in the governance contract.
+    3. That's it! Our backend will create a governance contract for you which you can download and deploy!.
 
-## 💸 Revenue Model
+  - For steps on how to deploy the governance contract follow this [guide](./Deploy)  
 
-- **Setup Fee**: One-time payment for governance deployment and storage config.
-<!-- - **Subscription Model**: Optional monthly/annual access to analytics and API suite.
-- **Gas-Based Fees**: Optional cut from proposal execution or gas-based volume.
-- **Custom Integration Support**: Billed for advanced needs. -->
+
+### NEXTSTEP?
+
 
 ---
+
 
 ## 📅 Roadmap
 
 ### ✅ MVP
-- [x] Manual dApp onboarding flow
-- [x] Smart contracts for governance
-- [x] Walrus integration for storage refunds
+- [x] Launch Governance frontend
+- [x] Generic smart contract for plug and play
+- [x] Generic smart contract for plug and play
+- [x] Walrus integration for proposal description storage and refunds
+- [x] Frontend UI for proposal creation and voting
+
 
 ### 🔜 Next
-- [ ] Frontend UI for proposal creation and voting
-- [ ] Project-specific governance configuration
-- [ ] Governance analytics dashboard
-- [ ] No-code DAO setup tools
-
+- [x] Automatic deployment using OTTERs backend.
 ---
 
 ## 📘 Documentation
 
-Coming soon!  
-A formal governance standard and onboarding guide will be published to help projects integrate OTTER smoothly.
+
 
 ---
 
@@ -83,7 +79,7 @@ A formal governance standard and onboarding guide will be published to help proj
 
 - **Sui Move** – On-chain governance contracts
 - **Walrus** – Programmable storage for refunds
-- **Next.js + Tailwind** – Frontend UI (coming)
+- **Next.js + Tailwind** – Frontend UI
 - **Typescript + Indexers** – Proposal & vote indexing
 
 ---
