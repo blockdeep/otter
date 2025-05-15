@@ -84,15 +84,19 @@ model GovernanceAddress {
   id          Int      @id @default(autoincrement())
   address     String   @unique
   projectName String
-  createdAt   DateTime @default(now())
   details     String
+  moduleName  String?  // Add this field to store the governance module name
+  governanceInfo String? // Optionally store the full governance info as JSON
+  createdAt   DateTime @default(now())
   active      Boolean  @default(true)
 
   proposals   Proposal[]
 
   @@index([active])
   @@index([projectName])
+  @@index([moduleName]) // Add index for efficient querying
 }
+
 
 
 

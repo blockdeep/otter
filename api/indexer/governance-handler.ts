@@ -14,7 +14,8 @@ type GovernanceEvent =
 type ProposalCreated = {
   proposal_id: string;
   creator: string;
-  title: String;
+  title: string;
+  description: string;
   voting_ends_at: string;
   threshold: string;
   governance_address: string;
@@ -50,6 +51,16 @@ export const handleGovernanceObjects = async (
 ) => {
   const updates: Record<string, Prisma.ProposalCreateInput> = {};
   const governanceAddressCache: Record<string, string> = {};
+  const existingVoteCounts: Record<
+    string,
+    {
+      yes: number;
+      no: number;
+      abstain: number;
+      status: number | null;
+      executed: boolean;
+    }
+  > = {};
 
   const governanceAddresses = await prisma.governanceAddress.findMany({
     select: { address: true },
@@ -57,6 +68,34 @@ export const handleGovernanceObjects = async (
 
   for (const gov of governanceAddresses) {
     governanceAddressCache[gov.address] = gov.address;
+  }
+
+  const proposalIds = events
+    .map((e) => (e.parsedJson as any).proposal_id)
+    .filter((id, index, arr) => arr.indexOf(id) === index);
+
+  const existingProposals = await prisma.proposal.findMany({
+    where: {
+      objectId: { in: proposalIds },
+    },
+    select: {
+      objectId: true,
+      yes: true,
+      no: true,
+      abstain: true,
+      status: true,
+      executed: true,
+    },
+  });
+
+  for (const proposal of existingProposals) {
+    existingVoteCounts[proposal.objectId] = {
+      yes: proposal.yes || 0,
+      no: proposal.no || 0,
+      abstain: proposal.abstain || 0,
+      status: proposal.status,
+      executed: proposal.executed || false,
+    };
   }
 
   for (const event of events) {
@@ -68,11 +107,15 @@ export const handleGovernanceObjects = async (
     const data = event.parsedJson as GovernanceEvent;
 
     if (!Object.hasOwn(updates, data.proposal_id)) {
+      const existing = existingVoteCounts[data.proposal_id];
+
       updates[data.proposal_id] = {
         objectId: data.proposal_id,
-        yes: 0,
-        no: 0,
-        abstain: 0,
+        yes: existing?.yes || 0, // Use existing count or 0 for new
+        no: existing?.no || 0, // Use existing count or 0 for new
+        abstain: existing?.abstain || 0, // Use existing count or 0 for new
+        status: existing?.status || 0, // Keep existing status initially
+        executed: existing?.executed || false,
         votes: {
           create: [],
         },
@@ -119,7 +162,8 @@ export const handleGovernanceObjects = async (
 
     // Handle creation event
     updates[data.proposal_id].creator = creationData.creator;
-    updates[data.proposal_id].title = creationData.title as string;
+    updates[data.proposal_id].title = creationData.title;
+    updates[data.proposal_id].description = creationData.description;
     updates[data.proposal_id].votingEndsAt = creationData.voting_ends_at;
     updates[data.proposal_id].threshold = creationData.threshold;
     updates[data.proposal_id].governance = {
