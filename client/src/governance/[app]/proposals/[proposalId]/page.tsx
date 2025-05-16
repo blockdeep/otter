@@ -6,10 +6,12 @@ import {
   ThumbsUp,
   CheckCircle,
   Play,
+  Copy,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +26,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { getGovernanceInfo } from "@/lib/RPC";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import Walrus, { blobToString } from "@/lib/Walrus";
 
 interface Proposal {
   id: number;
@@ -38,6 +43,7 @@ interface Proposal {
   yes: number;
   no: number;
   abstain: number;
+  description?: string; // Optional Walrus blob ID
 }
 
 interface GovernanceInfo {
@@ -98,11 +104,16 @@ const getStatusLabel = (status: number) => {
   }
 };
 
+// Utility function to truncate text with ellipsis
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
+
 export default function ProposalDetailsPage() {
   const { app, proposalId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,6 +131,11 @@ export default function ProposalDetailsPage() {
     null,
   );
 
+  // Walrus description states
+  const [descriptionContent, setDescriptionContent] = useState<string>("");
+  const [descriptionLoading, setDescriptionLoading] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+
   const API_URL =
     import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
 
@@ -132,6 +148,42 @@ export default function ProposalDetailsPage() {
   const VOTE_NO = 1;
   const VOTE_ABSTAIN = 2;
 
+  // Function to fetch description from Walrus
+  const fetchDescription = async (blobId: string) => {
+    setDescriptionLoading(true);
+    setDescriptionError(null);
+
+    try {
+      const downloadedData = await Walrus.downloadBlob(blobId);
+      const downloadedText = await blobToString(downloadedData);
+      setDescriptionContent(downloadedText);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load description";
+      setDescriptionError(errorMessage);
+      console.error("Error fetching description from Walrus:", err);
+    } finally {
+      setDescriptionLoading(false);
+    }
+  };
+
+  // Function to copy blob ID to clipboard
+  const copyBlobId = async (blobId: string) => {
+    try {
+      await navigator.clipboard.writeText(blobId);
+      toast({
+        title: "Copied!",
+        description: "Blob ID copied to clipboard.",
+      });
+    } catch (err) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy blob ID to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchProposal = async () => {
       try {
@@ -143,6 +195,11 @@ export default function ProposalDetailsPage() {
         const fetched = data?.data?.[0];
         if (!fetched) throw new Error("Proposal not found.");
         setProposal(fetched);
+
+        // Fetch description if available
+        if (fetched.description) {
+          fetchDescription(fetched.description);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -175,7 +232,6 @@ export default function ProposalDetailsPage() {
   // Helper function to determine proposal state
   const getProposalState = () => {
     if (!proposal) return null;
-
     const now = Date.now();
     const votingEndsAt = Number(proposal.votingEndsAt);
     const hasTimeEnded = now > votingEndsAt;
@@ -194,7 +250,6 @@ export default function ProposalDetailsPage() {
     } else if (status === PROPOSAL_STATUS_CANCELLED) {
       return { state: "cancelled", label: "Cancelled" };
     }
-
     return { state: "unknown", label: getStatusLabel(status || 0) };
   };
 
@@ -208,24 +263,20 @@ export default function ProposalDetailsPage() {
       setError("Governance information not loaded");
       return;
     }
-
     if (!governanceSystemId) {
       setError("Governance System ID is required");
       return;
     }
-
     if (!govTokenId) {
       setError("GOVTOKEN Coin ID is required");
       return;
     }
-
     if (!proposalId) {
       setError("Proposal ID is required");
       return;
     }
 
     setVoting(true);
-
     const tx = new Transaction();
 
     // Map vote type to contract constants
@@ -272,20 +323,16 @@ export default function ProposalDetailsPage() {
               showEffects: true,
             },
           });
-
           console.log("Vote transaction effects:", effects);
-
           toast({
             title: "Vote Cast Successfully",
             description: `Your ${selectedVoteType} vote has been recorded.`,
           });
-
           // Reset vote inputs
           setShowVoteInputs(false);
           setSelectedVoteType("");
           setGovernanceSystemId("");
           setGovTokenId("");
-
           // Refresh proposal data
           const res = await fetch(
             `${API_URL}/proposals?objectId=${proposalId}`,
@@ -319,19 +366,16 @@ export default function ProposalDetailsPage() {
       setError("Governance information not loaded");
       return;
     }
-
     if (!governanceSystemId) {
       setError("Governance System ID is required");
       return;
     }
-
     if (!proposalId) {
       setError("Proposal ID is required");
       return;
     }
 
     setFinalizing(true);
-
     const tx = new Transaction();
 
     const args = [
@@ -357,18 +401,14 @@ export default function ProposalDetailsPage() {
               showEffects: true,
             },
           });
-
           console.log("Finalize transaction effects:", effects);
-
           toast({
             title: "Proposal Finalized",
             description: "The proposal has been successfully finalized.",
           });
-
           // Reset finalize inputs
           setShowFinalizeInputs(false);
           setGovernanceSystemId("");
-
           // Refresh proposal data
           const res = await fetch(
             `${API_URL}/proposals?objectId=${proposalId}`,
@@ -402,24 +442,20 @@ export default function ProposalDetailsPage() {
       setError("Governance information not loaded");
       return;
     }
-
     if (!governanceSystemId) {
       setError("Governance System ID is required");
       return;
     }
-
     if (!counterObjectId) {
       setError("Counter Object ID is required for execution");
       return;
     }
-
     if (!proposalId) {
       setError("Proposal ID is required");
       return;
     }
 
     setExecuting(true);
-
     const tx = new Transaction();
 
     const args = [
@@ -445,19 +481,15 @@ export default function ProposalDetailsPage() {
               showEffects: true,
             },
           });
-
           console.log("Execute transaction effects:", effects);
-
           toast({
             title: "Proposal Executed",
             description: "The proposal has been successfully executed!",
           });
-
           // Reset execute inputs
           setShowExecuteInputs(false);
           setGovernanceSystemId("");
           setCounterObjectId("");
-
           // Refresh proposal data
           const res = await fetch(
             `${API_URL}/proposals?objectId=${proposalId}`,
@@ -529,7 +561,7 @@ export default function ProposalDetailsPage() {
   const formattedEndTime = formatDate(Number(proposal.votingEndsAt));
   const proposalState = getProposalState();
   console.log(proposalState);
-  
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
@@ -556,14 +588,12 @@ export default function ProposalDetailsPage() {
                 </Badge>
               </div>
             </div>
-
             {error && (
               <Alert variant="destructive" className="mb-6">
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-
             <Card className="border-border bg-card">
               <CardHeader>
                 <CardTitle className="text-xl text-card-foreground">
@@ -590,10 +620,31 @@ export default function ProposalDetailsPage() {
                       </p>
                     </div>
                   </div>
+                  {proposal.description && (
+                    <div className="flex items-center">
+                      <ExternalLink className="mr-2 h-5 w-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Description Blob ID
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs font-mono text-card-foreground bg-muted px-2 py-1 rounded">
+                            {truncateText(proposal.description, 20)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyBlobId(proposal.description!)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
                 <Separator className="bg-border" />
-
                 <div>
                   <h3 className="font-medium mb-4 text-card-foreground">
                     Voting Results
@@ -643,14 +694,12 @@ export default function ProposalDetailsPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* Action buttons based on proposal state */}
                 {proposalState?.state === "voting" && (
                   <div className="pt-4">
                     <h3 className="font-medium mb-4 text-card-foreground">
                       Cast Your Vote
                     </h3>
-
                     {/* Vote selection buttons */}
                     {!showVoteInputs && (
                       <div className="flex flex-col sm:flex-row gap-4">
@@ -675,7 +724,6 @@ export default function ProposalDetailsPage() {
                         </Button>
                       </div>
                     )}
-
                     {/* Vote inputs form */}
                     {showVoteInputs && (
                       <div className="space-y-4 border rounded-lg p-4 bg-background">
@@ -685,7 +733,6 @@ export default function ProposalDetailsPage() {
                             {selectedVoteType}
                           </span>
                         </h4>
-
                         <div className="space-y-2">
                           <Label htmlFor="voteGovernanceSystemId">
                             Governance System ID
@@ -700,7 +747,6 @@ export default function ProposalDetailsPage() {
                             required
                           />
                         </div>
-
                         <div className="space-y-2">
                           <Label htmlFor="voteGovTokenId">
                             Your GOVTOKEN Coin ID
@@ -713,7 +759,6 @@ export default function ProposalDetailsPage() {
                             required
                           />
                         </div>
-
                         <div className="flex gap-4">
                           <Button
                             onClick={handleSubmitVote}
@@ -743,7 +788,6 @@ export default function ProposalDetailsPage() {
                     )}
                   </div>
                 )}
-
                 {/* Finalize Proposal */}
                 {proposalState?.state === "finalize" && (
                   <div className="pt-4">
@@ -754,7 +798,6 @@ export default function ProposalDetailsPage() {
                       Voting period has ended. Finalize this proposal to
                       determine if it passed or failed.
                     </p>
-
                     {!showFinalizeInputs && (
                       <Button
                         className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -764,7 +807,6 @@ export default function ProposalDetailsPage() {
                         Proposal
                       </Button>
                     )}
-
                     {showFinalizeInputs && (
                       <div className="space-y-4 border rounded-lg p-4 bg-background">
                         <div className="space-y-2">
@@ -781,7 +823,6 @@ export default function ProposalDetailsPage() {
                             required
                           />
                         </div>
-
                         <div className="flex gap-4">
                           <Button
                             onClick={handleFinalizeProposal}
@@ -805,7 +846,6 @@ export default function ProposalDetailsPage() {
                     )}
                   </div>
                 )}
-
                 {/* Execute Proposal */}
                 {proposalState?.state === "execute" && (
                   <div className="pt-4">
@@ -816,7 +856,6 @@ export default function ProposalDetailsPage() {
                       This proposal has passed and is ready to be executed. This
                       will perform the proposed action.
                     </p>
-
                     {!showExecuteInputs && (
                       <Button
                         className="bg-green-600 hover:bg-green-700 text-white"
@@ -825,7 +864,6 @@ export default function ProposalDetailsPage() {
                         <Play className="mr-2 h-4 w-4" /> Execute Proposal
                       </Button>
                     )}
-
                     {showExecuteInputs && (
                       <div className="space-y-4 border rounded-lg p-4 bg-background">
                         <div className="space-y-2">
@@ -842,7 +880,6 @@ export default function ProposalDetailsPage() {
                             required
                           />
                         </div>
-
                         <div className="space-y-2">
                           <Label htmlFor="counterObjectId">
                             Counter Object ID
@@ -855,7 +892,6 @@ export default function ProposalDetailsPage() {
                             required
                           />
                         </div>
-
                         <div className="flex gap-4">
                           <Button
                             onClick={handleExecuteProposal}
@@ -884,7 +920,6 @@ export default function ProposalDetailsPage() {
                     )}
                   </div>
                 )}
-
                 {/* Information for completed states */}
                 {proposalState?.state === "executed" && (
                   <div className="pt-4">
@@ -898,7 +933,6 @@ export default function ProposalDetailsPage() {
                     </Alert>
                   </div>
                 )}
-
                 {proposalState?.state === "rejected" && (
                   <div className="pt-4">
                     <Alert variant="destructive">
@@ -912,6 +946,63 @@ export default function ProposalDetailsPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Proposal Description Section */}
+            {proposal.description && (
+              <Card className="border-border bg-card mt-6">
+                <CardHeader>
+                  <CardTitle className="text-xl text-card-foreground">
+                    Proposal Description
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {descriptionLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-muted-foreground">
+                        Loading description...
+                      </div>
+                    </div>
+                  )}
+
+                  {descriptionError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error Loading Description</AlertTitle>
+                      <AlertDescription>
+                        {descriptionError}
+                        <Button
+                          variant="link"
+                          className="ml-2 h-auto p-0"
+                          onClick={() =>
+                            fetchDescription(proposal.description!)
+                          }
+                        >
+                          Retry
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {!descriptionLoading &&
+                    !descriptionError &&
+                    descriptionContent && (
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {descriptionContent}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+
+                  {!descriptionLoading &&
+                    !descriptionError &&
+                    !descriptionContent && (
+                      <div className="text-muted-foreground text-center py-8">
+                        No description content available
+                      </div>
+                    )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </section>
       </main>
