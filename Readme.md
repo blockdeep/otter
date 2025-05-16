@@ -66,12 +66,12 @@ Due to the limitations of dynamic dispatch on Sui, onboarding is manual for now.
 
 
 ### 🔜 Next
-- [x] Automatic deployment using OTTERs backend.
+- [ ]  Automatic deployment using OTTERs backend.
 ---
 
-## 📘 Documentation
+## 📘 Contract Compatibility
 
-
+Check out the docs for [governance compatibitility](./Compatibility).
 
 ---
 

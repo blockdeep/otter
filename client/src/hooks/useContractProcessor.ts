@@ -23,16 +23,19 @@ export interface GovernableAction {
 export interface ModuleInfo {
   packageName: string;
   moduleName: string;
+  address?: string;
 }
 
 /**
  * Result of contract processing
  */
 export interface ProcessingResult {
+  packageId?: string;
   moduleInfo: ModuleInfo;
+  mainStruct?: string;
   governableActions: GovernableAction[];
   governanceContract: string;
-  governanceTokenContract: string; // Add this new field
+  governanceTokenContract: string;
 }
 
 /**
@@ -49,6 +52,9 @@ interface ApiResponse<T> {
  */
 export function useContractProcessor() {
   const [contractCode, setContractCode] = useState<string>("");
+  const [packageId, setPackageId] = useState<string>("");
+  const [inputMethod, setInputMethod] = useState<"code" | "package">("code");
+  const [rpcUrl, setRpcUrl] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [detectedActions, setDetectedActions] = useState<GovernableAction[]>(
     [],
@@ -67,22 +73,49 @@ export function useContractProcessor() {
   const handleContractCodeChange = (value: string) => {
     setContractCode(value);
     // Reset results when code changes
-    if (result) {
-      setResult(null);
-      setError(null);
-    }
+    resetResults();
+  };
 
-    // Reset detected actions and selections
+  /**
+   * Handle package ID input change
+   */
+  const handlePackageIdChange = (value: string) => {
+    setPackageId(value);
+    // Reset results when package ID changes
+    resetResults();
+  };
+
+  /**
+   * Reset all results and selections
+   */
+  const resetResults = () => {
+    setResult(null);
+    setError(null);
     setDetectedActions([]);
     setSelectedActions([]);
+  };
+
+  /**
+   * Switch between input methods
+   */
+  const switchInputMethod = (method: "code" | "package") => {
+    setInputMethod(method);
+    resetResults();
+    setContractCode("");
+    setPackageId("");
   };
 
   /**
    * Parse the contract to identify potential governable actions
    */
   const parseContract = async () => {
-    if (!contractCode) {
+    if (inputMethod === "code" && !contractCode) {
       setError("Please enter contract code");
+      return;
+    }
+
+    if (inputMethod === "package" && !packageId) {
+      setError("Please enter package ID");
       return;
     }
 
@@ -90,23 +123,38 @@ export function useContractProcessor() {
       setIsProcessing(true);
       setError(null);
 
-      const response = await fetch(`${API_URL}/parse-contract`, {
+      const endpoint =
+        inputMethod === "code"
+          ? "parse-contract"
+          : "generate-governance-from-package";
+
+      const requestBody =
+        inputMethod === "code"
+          ? { contractCode }
+          : { packageId, rpcUrl: rpcUrl || undefined };
+
+      const response = await fetch(`${API_URL}/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          contractCode,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = (await response.json()) as ApiResponse<{
+        packageId?: string;
         moduleInfo: ModuleInfo;
+        mainStruct?: string;
         governableActions: GovernableAction[];
+        governanceContract?: string;
+        governanceTokenContract?: string;
       }>;
 
       if (!data.success) {
-        throw new Error(data.message || "Error parsing contract");
+        throw new Error(
+          data.message ||
+            `Error ${inputMethod === "code" ? "parsing contract" : "processing package"}`,
+        );
       }
 
       if (!data.data) {
@@ -119,9 +167,32 @@ export function useContractProcessor() {
       setSelectedActions(
         data.data.governableActions.map((action) => action.name),
       );
+
+      // If using package ID method and contracts are already generated, set the result
+      if (
+        inputMethod === "package" &&
+        data.data.governanceContract &&
+        data.data.governanceTokenContract
+      ) {
+        setResult({
+          packageId: data.data.packageId,
+          moduleInfo: data.data.moduleInfo,
+          mainStruct: data.data.mainStruct,
+          governableActions: data.data.governableActions,
+          governanceContract: data.data.governanceContract,
+          governanceTokenContract: data.data.governanceTokenContract,
+        });
+      }
     } catch (err) {
-      console.error("Error parsing contract:", err);
-      setError(err instanceof Error ? err.message : "Failed to parse contract");
+      console.error(
+        `Error ${inputMethod === "code" ? "parsing contract" : "processing package"}:`,
+        err,
+      );
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${inputMethod === "code" ? "parse contract" : "process package"}`,
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -146,6 +217,18 @@ export function useContractProcessor() {
   const generateGovernanceContract = async () => {
     if (selectedActions.length === 0) {
       setError("Please select at least one function to govern");
+      return;
+    }
+
+    // If using package method and already have the result, just filter the actions
+    if (inputMethod === "package" && result) {
+      const filteredActions = detectedActions.filter((action) =>
+        selectedActions.includes(action.name),
+      );
+      setResult({
+        ...result,
+        governableActions: filteredActions,
+      });
       return;
     }
 
@@ -234,12 +317,18 @@ export function useContractProcessor() {
 
   return {
     contractCode,
+    packageId,
+    inputMethod,
+    rpcUrl,
     isProcessing,
     detectedActions,
     selectedActions,
     result,
     error,
     handleContractCodeChange,
+    handlePackageIdChange,
+    switchInputMethod,
+    setRpcUrl,
     parseContract,
     generateGovernanceContract,
     downloadGovernanceContracts,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   Upload,
@@ -6,6 +6,7 @@ import {
   Check,
   AlertCircle,
   List,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,17 +24,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import useContractProcessor from "@/hooks/useContractProcessor";
 
 export default function LaunchGovernancePage() {
   const {
     contractCode,
+    packageId,
+    inputMethod,
     isProcessing,
     detectedActions,
     selectedActions,
     result,
     error,
     handleContractCodeChange,
+    handlePackageIdChange,
+    switchInputMethod,
     parseContract,
     generateGovernanceContract,
     downloadGovernanceContracts,
@@ -43,15 +50,27 @@ export default function LaunchGovernancePage() {
   const [activeTab, setActiveTab] = useState("upload");
   const [file, setFile] = useState<File | null>(null);
 
-  // After parsing successfully, move to selection tab
-  if (detectedActions.length > 0 && activeTab === "upload") {
-    setActiveTab("select");
-  }
+  // Handle automatic tab progression based on hook state
+  useEffect(() => {
+    // After parsing successfully, move to selection tab (only for code method)
+    if (
+      detectedActions.length > 0 &&
+      activeTab === "upload" &&
+      inputMethod === "code"
+    ) {
+      setActiveTab("select");
+    }
 
-  // After generating successfully, move to review tab
-  if (result && activeTab === "select") {
-    setActiveTab("review");
-  }
+    // For package method, if we have a result, go directly to review
+    if (result && activeTab === "upload" && inputMethod === "package") {
+      setActiveTab("review");
+    }
+
+    // After generating successfully, move to review tab
+    if (result && activeTab === "select") {
+      setActiveTab("review");
+    }
+  }, [detectedActions, result, activeTab, inputMethod]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -165,7 +184,9 @@ export default function LaunchGovernancePage() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="select"
-                  disabled={detectedActions.length === 0}
+                  disabled={
+                    detectedActions.length === 0 || inputMethod === "package"
+                  }
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
                   Select Functions
@@ -191,52 +212,106 @@ export default function LaunchGovernancePage() {
                   <CardHeader>
                     <CardTitle>Upload Your Contract</CardTitle>
                     <CardDescription>
-                      Provide your dApp's smart contract code to identify
-                      governable functions
+                      Provide your dApp's smart contract code or package ID to
+                      identify governable functions
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col gap-6">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
-                        <input
-                          type="file"
-                          id="contract-upload"
-                          className="hidden"
-                          accept=".move"
-                          onChange={handleFileUpload}
-                        />
-                        <label
-                          htmlFor="contract-upload"
-                          className="cursor-pointer flex flex-col items-center gap-2"
-                        >
-                          <Upload className="h-10 w-10 text-muted-foreground" />
-                          <h3 className="font-medium text-lg">
-                            Upload Contract File
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Drag and drop your .move file or click to browse
-                          </p>
-                          {file && (
-                            <div className="mt-2 text-primary font-medium">
-                              {file.name} ({Math.round(file.size / 1024)} KB)
-                            </div>
-                          )}
-                        </label>
+                      {/* Input Method Selection */}
+                      <div className="flex flex-col gap-4">
+                        <Label className="text-sm font-medium">
+                          Choose input method:
+                        </Label>
+                        <div className="flex gap-4">
+                          <Button
+                            variant={
+                              inputMethod === "code" ? "default" : "outline"
+                            }
+                            onClick={() => switchInputMethod("code")}
+                            className="flex items-center gap-2"
+                          >
+                            <FileCode className="h-4 w-4" />
+                            Contract Code
+                          </Button>
+                          <Button
+                            variant={
+                              inputMethod === "package" ? "default" : "outline"
+                            }
+                            onClick={() => switchInputMethod("package")}
+                            className="flex items-center gap-2"
+                          >
+                            <Package className="h-4 w-4" />
+                            Package ID
+                          </Button>
+                        </div>
                       </div>
 
-                      <div>
-                        <h3 className="mb-2 font-medium">
-                          Or paste your contract code:
-                        </h3>
-                        <Textarea
-                          placeholder="Paste your Move contract code here..."
-                          className="min-h-[300px] font-mono text-sm"
-                          value={contractCode}
-                          onChange={(e) =>
-                            handleContractCodeChange(e.target.value)
-                          }
-                        />
-                      </div>
+                      {inputMethod === "code" ? (
+                        <>
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
+                            <input
+                              type="file"
+                              id="contract-upload"
+                              className="hidden"
+                              accept=".move"
+                              onChange={handleFileUpload}
+                            />
+                            <label
+                              htmlFor="contract-upload"
+                              className="cursor-pointer flex flex-col items-center gap-2"
+                            >
+                              <Upload className="h-10 w-10 text-muted-foreground" />
+                              <h3 className="font-medium text-lg">
+                                Upload Contract File
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                Drag and drop your .move file or click to browse
+                              </p>
+                              {file && (
+                                <div className="mt-2 text-primary font-medium">
+                                  {file.name} ({Math.round(file.size / 1024)}{" "}
+                                  KB)
+                                </div>
+                              )}
+                            </label>
+                          </div>
+
+                          <div>
+                            <h3 className="mb-2 font-medium">
+                              Or paste your contract code:
+                            </h3>
+                            <Textarea
+                              placeholder="Paste your Move contract code here..."
+                              className="min-h-[300px] font-mono text-sm"
+                              value={contractCode}
+                              onChange={(e) =>
+                                handleContractCodeChange(e.target.value)
+                              }
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-4">
+                          <div>
+                            <Label
+                              htmlFor="package-id"
+                              className="text-sm font-medium"
+                            >
+                              Package ID
+                            </Label>
+                            <Input
+                              id="package-id"
+                              placeholder="Enter package ID (e.g., 0x123...)"
+                              value={packageId}
+                              onChange={(e) =>
+                                handlePackageIdChange(e.target.value)
+                              }
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       {error && (
                         <Alert variant="destructive">
@@ -253,8 +328,9 @@ export default function LaunchGovernancePage() {
                             className="w-full"
                           />
                           <p className="text-sm text-muted-foreground">
-                            Analyzing contract and identifying governable
-                            functions...
+                            {inputMethod === "code"
+                              ? "Analyzing contract and identifying governable functions..."
+                              : "Processing package and generating governance contracts..."}
                           </p>
                         </div>
                       )}
@@ -264,15 +340,22 @@ export default function LaunchGovernancePage() {
                     <Button
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
                       onClick={parseContract}
-                      disabled={!contractCode || isProcessing}
+                      disabled={
+                        (inputMethod === "code" && !contractCode) ||
+                        (inputMethod === "package" && !packageId) ||
+                        isProcessing
+                      }
                     >
-                      Parse Contract <ArrowRight className="ml-2 h-4 w-4" />
+                      {inputMethod === "code"
+                        ? "Parse Contract"
+                        : "Process Package"}{" "}
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardFooter>
                 </Card>
               </TabsContent>
 
-              {/* New Selection Tab */}
+              {/* Selection Tab - Only shown for code method */}
               <TabsContent value="select" className="mt-6">
                 <Card className="border border-gray-300 shadow-md">
                   <CardHeader>
@@ -428,6 +511,16 @@ export default function LaunchGovernancePage() {
                                 {result.moduleInfo.moduleName}
                               </p>
                             </div>
+                            {result.packageId && (
+                              <div className="md:col-span-2">
+                                <p className="text-sm font-medium">
+                                  Package ID:
+                                </p>
+                                <p className="font-mono text-xs break-all">
+                                  {result.packageId}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -509,7 +602,10 @@ export default function LaunchGovernancePage() {
                     ) : (
                       <p>
                         No contract has been processed yet. Please go back and
-                        select governance functions.
+                        {inputMethod === "code"
+                          ? " select governance functions"
+                          : " process a package"}
+                        .
                       </p>
                     )}
                   </CardContent>
@@ -517,7 +613,11 @@ export default function LaunchGovernancePage() {
                     <Button
                       variant="outline"
                       className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
-                      onClick={() => setActiveTab("select")}
+                      onClick={() =>
+                        setActiveTab(
+                          inputMethod === "code" ? "select" : "upload",
+                        )
+                      }
                     >
                       Go Back
                     </Button>
