@@ -8,6 +8,7 @@ import {
   identifyGovernableActions,
 } from "../services";
 import { generateGovernanceTokenContract } from "../services/governanceTokenGenerator";
+import { SuiRPC } from "../utils/RPC";
 
 /**
  * Contract processor router
@@ -160,5 +161,80 @@ router.post("/process-contract", async (req: Request, res: Response) => {
     });
   }
 });
+
+// New route to add to your router
+// Add this to your existing router in paste.txt
+
+/**
+ * Generate governance contracts from a deployed package ID
+ */
+//@ts-ignore
+router.post("/generate-governance-from-package", async (req: Request, res: Response) => {
+    try {
+      const { packageId, rpcUrl } = req.body;
+
+      if (!packageId) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing packageId",
+        });
+      }
+
+      // Initialize SuiRPC with custom URL if provided
+      const rpc = new SuiRPC(rpcUrl);
+
+      // Extract all necessary data from the package
+      const { moduleInfo, mainStruct, governableActions } =
+        await rpc.extractGovernanceData(packageId);
+
+      if (governableActions.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No governable actions found in the package",
+        });
+      }
+
+      // Generate governance contract using the extracted data
+      // We need to create a mock contract code string for the existing generator
+      // since it expects a contract code parameter
+      const mockContractCode = `module ${moduleInfo.packageName}::${moduleInfo.moduleName} { }`;
+
+      const governanceContract = generateGovernanceContract(
+        moduleInfo,
+        governableActions,
+        mockContractCode,
+        mainStruct
+      );
+
+      // Generate matching governance token contract
+      const governanceTokenContract =
+        generateGovernanceTokenContract(moduleInfo);
+
+      // Return the result
+      res.status(200).json({
+        success: true,
+        data: {
+          packageId,
+          moduleInfo,
+          mainStruct,
+          governableActions,
+          governanceContract,
+          governanceTokenContract,
+        },
+      });
+      return;
+    } catch (error) {
+      console.error("Error generating governance from package:", error);
+      res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while generating governance from package",
+      });
+      return;
+    }
+  }
+);
 
 export default router;

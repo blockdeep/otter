@@ -1,41 +1,45 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { GovernableAction } from './actionIdentifier';
-import { findMainStruct } from './contractExtractor';
+import { GovernableAction } from "./actionIdentifier";
+import { findMainStruct } from "./contractExtractor";
 
 /**
  * Generate a governance contract for a Move contract
  */
 export function generateGovernanceContract(
-  moduleInfo: any, 
+  moduleInfo: any,
   governableActions: GovernableAction[],
-  contractCode: string
+  contractCode: string,
+  mainStructName?: string // Add optional parameter for when we know the struct name
 ): string {
   if (governableActions.length === 0) {
-    throw new Error('No governable actions selected for the contract');
+    throw new Error("No governable actions selected for the contract");
   }
-  
-  // Try to find the main struct
-  const mainStructName = findMainStruct(contractCode) || 'AppObject';
-  
+
+  // Use provided main struct name or try to find it in contract code
+  const mainStruct =
+    mainStructName || findMainStruct(contractCode) || "AppObject";
+
   // Generate the proposal kind enum based on governable actions
   const proposalKindEnum = generateProposalKindEnum(governableActions);
-  
+
   // Generate execution logic for each action
   const executionLogic = generateExecutionLogic(moduleInfo, governableActions);
-  
+
   // Generate proposal creation function
-  const proposalCreationLogic = generateProposalCreationLogic(governableActions);
-  
+  const proposalCreationLogic =
+    generateProposalCreationLogic(governableActions);
+
   // Generate the complete governance contract
-  return `
+  return `// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 module ${moduleInfo.packageName}_governance::governance {
     use std::string::{Self, String};
     use sui::table::{Self, Table};
     use sui::tx_context::{Self, sender, TxContext};
     use sui::vec_map::{Self, VecMap};
     use sui::event;
-    use sui::dynamic_field as df;
     use sui::coin::{Self, Coin};
     use sui::clock::{Self, Clock};
     use sui::object::{Self, UID, ID};
@@ -350,7 +354,7 @@ module ${moduleInfo.packageName}_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut ${moduleInfo.packageName}::${moduleInfo.moduleName}::${mainStructName},
+        app_object: &mut ${moduleInfo.packageName}::${moduleInfo.moduleName}::${mainStruct},
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -461,20 +465,24 @@ module ${moduleInfo.packageName}_governance::governance {
 /**
  * Generate the proposal kind enum based on governable actions
  */
-function generateProposalKindEnum(governableActions: GovernableAction[]): string {
+function generateProposalKindEnum(
+  governableActions: GovernableAction[]
+): string {
   // Generate the proposal kind enum based on governable actions
-  const enumVariants = governableActions.map((action) => {
-    // Create enum variant with parameters if needed
-    if (action.parameters.length > 0) {
-      const params = action.parameters
-        .map(param => `${param.name}: ${param.type}`)
-        .join(', ');
-      return `        ${capitalizeFirstLetter(action.name)} { ${params} }`;
-    } else {
-      return `        ${capitalizeFirstLetter(action.name)}`;
-    }
-  }).join(',\n');
-  
+  const enumVariants = governableActions
+    .map((action) => {
+      // Create enum variant with parameters if needed
+      if (action.parameters.length > 0) {
+        const params = action.parameters
+          .map((param) => `${param.name}: ${param.type}`)
+          .join(", ");
+        return `        ${capitalizeFirstLetter(action.name)} { ${params} }`;
+      } else {
+        return `        ${capitalizeFirstLetter(action.name)}`;
+      }
+    })
+    .join(",\n");
+
   return `public enum ProposalKind has drop, store {
 ${enumVariants}
     }`;
@@ -483,31 +491,82 @@ ${enumVariants}
 /**
  * Generate execution logic for each governable action
  */
-function generateExecutionLogic(moduleInfo: any, governableActions: GovernableAction[]): string {
+function generateExecutionLogic(
+  moduleInfo: any,
+  governableActions: GovernableAction[]
+): string {
   // Generate execution logic for each governable action
   return `match (&proposal.kind) {
-            ${governableActions.map((action) => {
-              if (action.parameters.length > 0) {
-                const paramRefs = action.parameters
-                  .map(param => param.name)
-                  .join(', ');
-                return `ProposalKind::${capitalizeFirstLetter(action.name)} { ${paramRefs} } => {
-                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${action.name}(app_object${action.parameters.length > 0 ? ', ' : ''}${paramRefs})
+            ${governableActions
+              .map((action) => {
+                // Filter out common parameters that shouldn't be passed to the function
+                const filteredParams = action.parameters.filter((param) => {
+                  const type = param.type.toLowerCase();
+                  return (
+                    !type.includes("txcontext") &&
+                    !type.includes("clock") &&
+                    !type.includes("governance") &&
+                    !type.includes("campaign") && // Skip the main object as it's passed separately
+                    !type.includes("&mut")
+                  );
+                });
+
+                if (filteredParams.length > 0) {
+                  const paramRefs = filteredParams
+                    .map((param) => param.name)
+                    .join(", ");
+                  return `ProposalKind::${capitalizeFirstLetter(
+                    action.name
+                  )} { ${paramRefs} } => {
+                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${
+                    action.name
+                  }(app_object, ${paramRefs}, ctx)
             }`;
-              } else {
-                return `ProposalKind::${capitalizeFirstLetter(action.name)} => {
-                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${action.name}(app_object)
+                } else {
+                  return `ProposalKind::${capitalizeFirstLetter(
+                    action.name
+                  )} => {
+                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${
+                    action.name
+                  }(app_object, ctx)
             }`;
-              }
-            }).join(',\n            ')}
+                }
+              })
+              .join(",\n            ")}
         };`;
 }
 
 /**
  * Generate proposal creation function with parameters for all governable actions
  */
-function generateProposalCreationLogic(governableActions: GovernableAction[]): string {
-  // Generate proposal creation function with the right parameters
+function generateProposalCreationLogic(
+  governableActions: GovernableAction[]
+): string {
+  // Collect all unique parameters that aren't common system parameters
+  const allParams = new Map<string, string>();
+
+  governableActions.forEach((action, actionIndex) => {
+    action.parameters.forEach((param) => {
+      const type = param.type.toLowerCase();
+      // Skip common parameters
+      if (
+        !type.includes("txcontext") &&
+        !type.includes("clock") &&
+        !type.includes("governance") &&
+        !type.includes("campaign") &&
+        !type.includes("&mut")
+      ) {
+        // Create unique parameter name by combining action index and param name
+        const uniqueName = `${param.name}_${actionIndex}`;
+        allParams.set(uniqueName, `${param.type} // For ${action.name}`);
+      }
+    });
+  });
+
+  const parameterList = Array.from(allParams.entries())
+    .map(([name, type]) => `${name}: ${type}`)
+    .join(",\n        ");
+
   return `public entry fun create_proposal(
         self: &mut GovernanceSystem,
         governance_coins: &Coin<GOVTOKEN>,
@@ -515,29 +574,44 @@ function generateProposalCreationLogic(governableActions: GovernableAction[]): s
         description: String,
         voting_period_seconds: u64,
         clock: &Clock,
-        proposal_kind: u8, // 0-${governableActions.length - 1} for different proposal types
-        ${governableActions.map((action, index) => {
-          return action.parameters.map(param => 
-            `${param.name}: ${param.type} // For proposal kind ${index}`
-          ).join(',\n        ');
-        }).filter(Boolean).join(',\n        ')}
+        proposal_kind: u8, // 0-${
+          governableActions.length - 1
+        } for different proposal types
+        ${parameterList}
         ctx: &mut TxContext,
     ) : ID {
         let pK: ProposalKind;
         // Create the appropriate proposal kind based on the proposal_kind parameter
         match (proposal_kind) {
-            ${governableActions.map((action, index) => {
-              if (action.parameters.length > 0) {
-                const paramNames = action.parameters.map(param => param.name).join(', ');
-                return `${index} => {
-                pK = ProposalKind::${capitalizeFirstLetter(action.name)} { ${paramNames} };
+            ${governableActions
+              .map((action, index) => {
+                const filteredParams = action.parameters.filter((param) => {
+                  const type = param.type.toLowerCase();
+                  return (
+                    !type.includes("txcontext") &&
+                    !type.includes("clock") &&
+                    !type.includes("governance") &&
+                    !type.includes("campaign") &&
+                    !type.includes("&mut")
+                  );
+                });
+
+                if (filteredParams.length > 0) {
+                  const paramNames = filteredParams
+                    .map((param) => `${param.name}_${index}`)
+                    .join(", ");
+                  return `${index} => {
+                pK = ProposalKind::${capitalizeFirstLetter(
+                  action.name
+                )} { ${paramNames} };
             }`;
-              } else {
-                return `${index} => {
+                } else {
+                  return `${index} => {
                 pK = ProposalKind::${capitalizeFirstLetter(action.name)};
             }`;
-              }
-            }).join('\n            ')}
+                }
+              })
+              .join("\n            ")}
             _ => {
                 abort EInvalidProposalKind
             }
