@@ -643,13 +643,14 @@ export default function LaunchGovernancePage() {
                 </Card>
               </TabsContent>
 
+              {/* Deploy Tab Content */}
               <TabsContent value="deploy" className="mt-6">
                 <Card className="border border-gray-300 shadow-md">
                   <CardHeader>
                     <CardTitle>Deploy Your Governance Module</CardTitle>
                     <CardDescription>
-                      Finalize and deploy your governance module to the Sui
-                      network
+                      Follow these instructions to deploy your governance module
+                      to the Sui network
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -689,6 +690,287 @@ export default function LaunchGovernancePage() {
                         </div>
                       </div>
 
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-bold">
+                          Deploying OTTER Governance on SUI
+                        </h3>
+                        <p className="text-muted-foreground">
+                          This guide walks you through deploying and simulating
+                          a governance flow using OTTER on the Sui blockchain.
+                        </p>
+                        <Alert className="border border-amber-200 bg-amber-50">
+                          <AlertCircle className="h-4 w-4 text-amber-500" />
+                          <AlertTitle>Prerequisite</AlertTitle>
+                          <AlertDescription>
+                            You must have{" "}
+                            <code className="bg-secondary/20 p-1 rounded">
+                              sui client
+                            </code>{" "}
+                            installed and configured (testnet/mainnet).
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+
+                      {/* Folder structure section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold">
+                          Folder structure for deployment
+                        </h3>
+                        <p className="text-muted-foreground">
+                          There are two ways that allows your app to refer to
+                          deployed packages - github or locally.
+                        </p>
+                        <p className="text-sm text-muted-foreground italic">
+                          Notice how your app package is being referred to
+                          through Move.toml.
+                        </p>
+
+                        <div className="space-y-6 mt-4">
+                          <div>
+                            <h4 className="font-bold text-primary">
+                              Scenario #1: Local reference
+                            </h4>
+                            <p className="my-2">
+                              Your folder structure should look something like
+                              this:
+                            </p>
+                            <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                              <pre>{`governance/
+├── app_folder/                 # App smart contract folder
+├── sources/                    
+│   ├── governance.move         # governance contract downloaded from OTTER.
+│   └── governance_token.move   # governnace token contract downloaded at the same time.
+├── tests
+└── Move.toml`}</pre>
+                            </div>
+
+                            <p className="my-2">And the Move.toml like this:</p>
+                            <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                              <pre>{`[package]
+name = "generic_governor"
+edition = "2024.beta" 
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+simple_counter = { local = "./simple_counter" }
+
+
+[addresses]
+generic_governor = "0x0"
+simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"`}</pre>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-bold text-primary">
+                              Scenario #2: Github reference
+                            </h4>
+                            <p className="my-2">
+                              Your folder structure should look something like
+                              this:
+                            </p>
+                            <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                              <pre>{`governance/
+├── sources/                    
+│   ├── governance.move         # governance contract downloaded from OTTER.
+│   └── governance_token.move   # governnace token contract downloaded at the same time.
+├── tests
+└── Move.toml`}</pre>
+                            </div>
+
+                            <p className="my-2">And the Move.toml like this:</p>
+                            <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                              <pre>{`[package]
+name = "generic_governor"
+edition = "2024.beta" 
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+simple_counter = { git = "https://github.com/<username>/<repo>.git", subdir = "<path-to-package>", rev = "<commit-or-branch>" }
+
+
+[addresses]
+generic_governor = "0x0"
+simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"`}</pre>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Deployment section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold">
+                          Moving on to deployment
+                        </h3>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            1. To deploy the governance package:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client publish
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            2. Post deployment, export the created objects:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            export
+                            ADMIN_CAP_ID=0x01968757b52e1b9c7f7ac44a167984c83757cc1de844500db964cbc5315cc775
+                            <br />
+                            export
+                            GOVERNANCE_SYSTEM_ID=0xf959b09a23202f1e04fb8379107e3fbfc0f5597d4a0bd7a04eae2c6b92b6b771
+                            <br />
+                            export
+                            GOVTOKEN_ADMIN_CAP=0xbd1ac83f0b22310a333a60d3fa88779e2881b6ab72d7c06059d6b88467341d7c
+                            <br />
+                            export
+                            TREASURY_ID=0x2533bd61ecd09cd585329d3245b58f8d33d6551a797c82515ccb31db0c473aa8
+                          </div>
+                          <p className="text-sm text-amber-700">
+                            ⚠️ The object IDs above are examples. Replace them
+                            with your actual object IDs from deployment.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            3. Initialize the governance contract:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client call --package $GOVERNANCE_PACKAGE_ID
+                            --module governance --function update_total_supply
+                            --args $ADMIN_CAP_ID $GOVERNANCE_SYSTEM_ID
+                            10000000000 --gas-budget 10000000
+                          </div>
+                        </div>
+
+                        <Alert className="border border-green-200 bg-green-50 mt-4">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <AlertTitle>Success!</AlertTitle>
+                          <AlertDescription>
+                            Your Governance Package is now deployed with both
+                            the governance contract and the token contract.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+
+                      {/* Using the Governance section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold">
+                          Using your Governance System
+                        </h3>
+                        <p className="text-muted-foreground">
+                          Follow these steps to create a proposal, vote on it,
+                          and execute it:
+                        </p>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            1. Mint Governance Tokens:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client call --package $GOVERNANCE_PACKAGE_ID
+                            --module govtoken --function mint_coins \<br />
+                            --args $GOVTOKEN_ADMIN_CAP $TREASURY_ID 1000000000
+                            $MY_ADDRESS \<br />
+                            --gas-budget 10000000
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            2. Extract governance token ID:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            export
+                            GOV_TOKEN_ID=0x9777bb0fdb3a4181966abc7a7b2d1a3d54b06109a21edc20f3122b172d3bfc74
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">3. Create a Proposal:</h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client call --package $GOVERNANCE_PACKAGE_ID
+                            --module governance --function create_proposal \
+                            <br />
+                            --args $GOVERNANCE_SYSTEM_ID $GOV_TOKEN_ID "Set
+                            counter to 33" "This proposal will set the counter
+                            value to 42" 120 "0x6" 0 33 \<br />
+                            --gas-budget 10000000
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            4. Export proposal ID:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            export
+                            PROPOSAL_ID=0x12a8fcbd50296ad40a1f6a0a541d68f185b93e558adc6122ad3fc2f8c9da64e8
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            5. Vote on the Proposal:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client call --package $GOVERNANCE_PACKAGE_ID
+                            --module governance --function vote \<br />
+                            --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID
+                            $GOV_TOKEN_ID 0 "0x6" \<br />
+                            --gas-budget 10000000
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            6. Finalize the Proposal:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client call --package $GOVERNANCE_PACKAGE_ID
+                            --module governance --function finalize_proposal \
+                            <br />
+                            --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID "0x6" \
+                            <br />
+                            --gas-budget 10000000
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <h4 className="font-medium">
+                            7. Execute the Proposal:
+                          </h4>
+                          <div className="bg-secondary/20 p-2 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                            sui client call --package $GOVERNANCE_PACKAGE_ID
+                            --module governance --function execute_proposal \
+                            <br />
+                            --args $GOVERNANCE_SYSTEM_ID $PROPOSAL_ID
+                            $COUNTER_OBJECT 42 \<br />
+                            --gas-budget 10000000
+                          </div>
+                        </div>
+
+                        <Alert className="border border-blue-200 bg-blue-50 mt-4">
+                          <AlertCircle className="h-4 w-4 text-blue-500" />
+                          <AlertTitle>Good News!</AlertTitle>
+                          <AlertDescription>
+                            <p>
+                              All of these steps can be done on the OTTER UI
+                              itself!
+                            </p>
+                            <p className="mt-2">
+                              Once deployed, add your governance address to the
+                              OTTER platform using the "Whitelist your
+                              governance" button on the Governance page.
+                            </p>
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+
                       <div className="space-y-4 p-4 border border-gray-300 rounded-md bg-blue-50/50 shadow-sm">
                         <h3 className="font-medium text-blue-700">
                           Next Steps
@@ -699,16 +981,18 @@ export default function LaunchGovernancePage() {
                             contracts
                           </li>
                           <li>
-                            Run the SUI CLI command to publish both modules to
-                            the network
+                            Setup your package structure as described above
                           </li>
                           <li>
-                            Connect your existing dApp to the new governance
-                            contract
+                            Deploy your governance module using the SUI CLI
+                          </li>
+                          <li>
+                            Whitelist your governance on the OTTER platform
                           </li>
                           <li>
                             Distribute governance tokens to your community
                           </li>
+                          <li>Start creating proposals and voting!</li>
                         </ol>
                       </div>
                     </div>
@@ -728,8 +1012,17 @@ export default function LaunchGovernancePage() {
                     >
                       Download Contracts
                     </Button>
-                    <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all">
-                      Deploy via CLI <ArrowRight className="ml-2 h-4 w-4" />
+                    <Button
+                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
+                      onClick={() =>
+                        window.open(
+                          "https://docs.otter.gov/deploy-guide",
+                          "_blank",
+                        )
+                      }
+                    >
+                      View Full Documentation{" "}
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardFooter>
                 </Card>

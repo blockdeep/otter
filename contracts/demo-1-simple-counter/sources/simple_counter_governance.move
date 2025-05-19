@@ -1,40 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { GovernableAction } from "./actionIdentifier";
-import { findMainStruct } from "./contractExtractor";
 
-/**
- * Generate a governance contract for a Move contract
- */
-export function generateGovernanceContract(
-  moduleInfo: any,
-  governableActions: GovernableAction[],
-  contractCode: string,
-  mainStructName?: string // Add optional parameter for when we know the struct name
-): string {
-  if (governableActions.length === 0) {
-    throw new Error("No governable actions selected for the contract");
-  }
-
-  // Use provided main struct name or try to find it in contract code
-  const mainStruct =
-    mainStructName || findMainStruct(contractCode) || "AppObject";
-
-  // Generate the proposal kind enum based on governable actions
-  const proposalKindEnum = generateProposalKindEnum(governableActions);
-
-  // Generate execution logic for each action
-  const executionLogic = generateExecutionLogic(moduleInfo, governableActions);
-
-  // Generate proposal creation function
-  const proposalCreationLogic =
-    generateProposalCreationLogic(governableActions);
-
-  // Generate the complete governance contract
-  return `// Copyright (c) Mysten Labs, Inc.
-// SPDX-License-Identifier: Apache-2.0
-
-module ${moduleInfo.packageName}_governance::governance {
+module simple_counter_governance::governance {
     use std::string::{Self, String};
     use sui::table::{Self, Table};
     use sui::tx_context::{sender};
@@ -44,10 +11,10 @@ module ${moduleInfo.packageName}_governance::governance {
     use sui::clock::{Self, Clock};
     
     // Import the govtoken module
-    use ${moduleInfo.packageName}_governance::govtoken::{GOVTOKEN};
+    use simple_counter_governance::govtoken::{GOVTOKEN};
     
     // Import the app module being governed
-    use ${moduleInfo.packageName}::${moduleInfo.moduleName};
+    use simple_counter::simple_counter;
     
     /// Error constants
     const EInsufficientVotingPower: u64 = 1;
@@ -97,7 +64,10 @@ module ${moduleInfo.packageName}_governance::governance {
     }
     
     /// Proposal Kinds -- SPECIFIC TO THE CONTRACT THAT HAS TO BE GOVERNED
-    ${proposalKindEnum}
+    public enum ProposalKind has drop, store {
+        Increment { counter: &mut Counter },
+        Set_value { counter: &mut Counter, value: u64 }
+    }
     
     /// A governance proposal
     public struct Proposal has key, store {
@@ -145,7 +115,6 @@ module ${moduleInfo.packageName}_governance::governance {
         proposal_id: ID,
         creator: address,
         title: String,
-        description: String,
         voting_ends_at: u64,
         threshold: u64,
     }
@@ -210,7 +179,71 @@ module ${moduleInfo.packageName}_governance::governance {
     // === Proposal management ===
    
     /// Create a proposal function
-    ${proposalCreationLogic}
+    public entry fun create_proposal(
+        self: &mut GovernanceSystem,
+        governance_coins: &Coin<GOVTOKEN>,
+        title: String,
+        description: String,
+        voting_period_seconds: u64,
+        clock: &Clock,
+        proposal_kind: u8, // 0-1 for different proposal types
+        value_1: u64 // For set_value
+        ctx: &mut TxContext,
+    ) : ID {
+        let pK: ProposalKind;
+        // Create the appropriate proposal kind based on the proposal_kind parameter
+        match (proposal_kind) {
+            0 => {
+                pK = ProposalKind::Increment;
+            }
+            1 => {
+                pK = ProposalKind::Set_value { value_1 };
+            }
+            _ => {
+                abort EInvalidProposalKind
+            }
+        };
+        
+        // Ensure the coin owner has enough tokens to create a proposal
+        let voting_power = coin::value(governance_coins);
+        assert!(voting_power >= MIN_PROPOSAL_THRESHOLD, EInsufficientVotingPower);
+        
+        let creator = sender(ctx);
+        let now_ms = clock::timestamp_ms(clock);
+        let voting_ends_at_ms = now_ms + (voting_period_seconds * 1000);
+        let proposal_uid = object::new(ctx);
+        let proposal_id = object::uid_to_inner(&proposal_uid);
+        
+        let proposal = Proposal {
+            id: proposal_uid,
+            creator,
+            title,
+            description,
+            status: PROPOSAL_STATUS_ACTIVE,
+            kind: pK,
+            yes_votes: 0,
+            no_votes: 0,
+            abstain_votes: 0,
+            total_voting_power: self.total_token_supply,
+            voted: vec_map::empty(),
+            created_at: now_ms,
+            voting_ends_at: voting_ends_at_ms,
+        };
+        
+        table::add(&mut self.proposals, proposal_id, proposal);
+        self.next_proposal_id = self.next_proposal_id + 1;
+        
+        // Emit proposal created event
+        event::emit(ProposalCreated {
+            proposal_id,
+            creator,
+            title,
+            voting_ends_at: voting_ends_at_ms,
+            threshold: MIN_PROPOSAL_THRESHOLD,
+        });
+        
+        proposal_id
+    }
     
     /// Cast a vote on a proposal
     public entry fun vote(
@@ -353,7 +386,7 @@ module ${moduleInfo.packageName}_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut ${moduleInfo.packageName}::${moduleInfo.moduleName}::${mainStruct},
+        app_object: &mut simple_counter::simple_counter::Counter,
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -364,7 +397,14 @@ module ${moduleInfo.packageName}_governance::governance {
         assert!(proposal.status == PROPOSAL_STATUS_PASSED, EProposalNotFinalized);
         
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
-        ${executionLogic}
+        match (&proposal.kind) {
+            ProposalKind::Increment => {
+                simple_counter::simple_counter::increment(app_object, ctx)
+            },
+            ProposalKind::Set_value { value } => {
+                simple_counter::simple_counter::set_value(app_object, value, ctx)
+            }
+        };
         
         // Set proposal to executed
         proposal.status = PROPOSAL_STATUS_EXECUTED;
@@ -458,210 +498,4 @@ module ${moduleInfo.packageName}_governance::governance {
     public fun get_proposal_threshold(): u64 {
         MIN_PROPOSAL_THRESHOLD
     }
-}`;
-}
-
-/**
- * Generate the proposal kind enum based on governable actions
- */
-function generateProposalKindEnum(
-  governableActions: GovernableAction[]
-): string {
-  // Generate the proposal kind enum based on governable actions
-  const enumVariants = governableActions
-    .map((action) => {
-      // Create enum variant with parameters if needed
-      if (action.parameters.length > 0) {
-        const params = action.parameters
-          .map((param) => `${param.name}: ${param.type}`)
-          .join(", ");
-        return `        ${capitalizeFirstLetter(action.name)} { ${params} }`;
-      } else {
-        return `        ${capitalizeFirstLetter(action.name)}`;
-      }
-    })
-    .join(",\n");
-
-  return `public enum ProposalKind has drop, store {
-${enumVariants}
-    }`;
-}
-
-/**
- * Generate execution logic for each governable action
- */
-function generateExecutionLogic(
-  moduleInfo: any,
-  governableActions: GovernableAction[]
-): string {
-  // Generate execution logic for each governable action
-  return `match (&proposal.kind) {
-            ${governableActions
-              .map((action) => {
-                // Filter out common parameters that shouldn't be passed to the function
-                const filteredParams = action.parameters.filter((param) => {
-                  const type = param.type.toLowerCase();
-                  return (
-                    !type.includes("txcontext") &&
-                    !type.includes("clock") &&
-                    !type.includes("governance") &&
-                    !type.includes("campaign") && // Skip the main object as it's passed separately
-                    !type.includes("&mut")
-                  );
-                });
-
-                if (filteredParams.length > 0) {
-                  const paramRefs = filteredParams
-                    .map((param) => param.name)
-                    .join(", ");
-                  return `ProposalKind::${capitalizeFirstLetter(
-                    action.name
-                  )} { ${paramRefs} } => {
-                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${
-                    action.name
-                  }(app_object, ${paramRefs}, ctx)
-            }`;
-                } else {
-                  return `ProposalKind::${capitalizeFirstLetter(
-                    action.name
-                  )} => {
-                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${
-                    action.name
-                  }(app_object, ctx)
-            }`;
-                }
-              })
-              .join(",\n            ")}
-        };`;
-}
-
-/**
- * Generate proposal creation function with parameters for all governable actions
- */
-function generateProposalCreationLogic(
-  governableActions: GovernableAction[]
-): string {
-  // Collect all unique parameters that aren't common system parameters
-  const allParams = new Map<string, string>();
-
-  governableActions.forEach((action, actionIndex) => {
-    action.parameters.forEach((param) => {
-      const type = param.type.toLowerCase();
-      // Skip common parameters
-      if (
-        !type.includes("txcontext") &&
-        !type.includes("clock") &&
-        !type.includes("governance") &&
-        !type.includes("campaign") &&
-        !type.includes("&mut")
-      ) {
-        // Create unique parameter name by combining action index and param name
-        const uniqueName = `${param.name}_${actionIndex}`;
-        allParams.set(uniqueName, `${param.type} // For ${action.name}`);
-      }
-    });
-  });
-
-  const parameterList = Array.from(allParams.entries())
-    .map(([name, type]) => `${name}: ${type}`)
-    .join(",\n        ");
-
-  return `public entry fun create_proposal(
-        self: &mut GovernanceSystem,
-        governance_coins: &Coin<GOVTOKEN>,
-        title: String,
-        description: String,
-        voting_period_seconds: u64,
-        clock: &Clock,
-        proposal_kind: u8, // 0-${
-          governableActions.length - 1
-        } for different proposal types
-        ${parameterList}
-        ctx: &mut TxContext,
-    ) : ID {
-        let pK: ProposalKind;
-        // Create the appropriate proposal kind based on the proposal_kind parameter
-        match (proposal_kind) {
-            ${governableActions
-              .map((action, index) => {
-                const filteredParams = action.parameters.filter((param) => {
-                  const type = param.type.toLowerCase();
-                  return (
-                    !type.includes("txcontext") &&
-                    !type.includes("clock") &&
-                    !type.includes("governance") &&
-                    !type.includes("campaign") &&
-                    !type.includes("&mut")
-                  );
-                });
-
-                if (filteredParams.length > 0) {
-                  const paramNames = filteredParams
-                    .map((param) => `${param.name}_${index}`)
-                    .join(", ");
-                  return `${index} => {
-                pK = ProposalKind::${capitalizeFirstLetter(
-                  action.name
-                )} { ${paramNames} };
-            }`;
-                } else {
-                  return `${index} => {
-                pK = ProposalKind::${capitalizeFirstLetter(action.name)};
-            }`;
-                }
-              })
-              .join("\n            ")}
-            _ => {
-                abort EInvalidProposalKind
-            }
-        };
-        
-        // Ensure the coin owner has enough tokens to create a proposal
-        let voting_power = coin::value(governance_coins);
-        assert!(voting_power >= MIN_PROPOSAL_THRESHOLD, EInsufficientVotingPower);
-        
-        let creator = sender(ctx);
-        let now_ms = clock::timestamp_ms(clock);
-        let voting_ends_at_ms = now_ms + (voting_period_seconds * 1000);
-        let proposal_uid = object::new(ctx);
-        let proposal_id = object::uid_to_inner(&proposal_uid);
-        
-        let proposal = Proposal {
-            id: proposal_uid,
-            creator,
-            title,
-            description,
-            status: PROPOSAL_STATUS_ACTIVE,
-            kind: pK,
-            yes_votes: 0,
-            no_votes: 0,
-            abstain_votes: 0,
-            total_voting_power: self.total_token_supply,
-            voted: vec_map::empty(),
-            created_at: now_ms,
-            voting_ends_at: voting_ends_at_ms,
-        };
-        
-        table::add(&mut self.proposals, proposal_id, proposal);
-        self.next_proposal_id = self.next_proposal_id + 1;
-        
-        // Emit proposal created event
-        event::emit(ProposalCreated {
-            proposal_id,
-            creator,
-            title,
-            description,
-            voting_ends_at: voting_ends_at_ms,
-            threshold: MIN_PROPOSAL_THRESHOLD,
-        });
-        
-        proposal_id
-    }`;
-}
-
-/**
- * Capitalize the first letter of a string
- */
-function capitalizeFirstLetter(string: string): string {
-  return string.charAt(0).toUpperCase() + string.slice(1);
 }

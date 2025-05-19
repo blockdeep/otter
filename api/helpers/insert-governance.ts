@@ -1,13 +1,8 @@
-// insert-governance.js
 // This script directly inserts a governance address into the database using Prisma
 // and automatically fetches the governance module name
 
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-
-// Import the RPC functions (adjust path as needed)
-// Note: You'll need to make sure these are available in your Node.js environment
-// You might need to create a separate Node.js version of the RPC functions
 
 // Define the governance address data
 const governanceData = {

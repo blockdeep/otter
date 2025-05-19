@@ -1,0 +1,13 @@
+[package]
+name = "simple_counter_governance"
+edition = "2024.beta" 
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+simple_counter = { local = "./simple_counter" }
+
+
+[addresses]
+simple_counter_governance = "0x0"
+simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"
+
