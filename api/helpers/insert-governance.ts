@@ -19,11 +19,13 @@ const governanceData = {
 
 // RPC class for fetching governance info (Node.js compatible version)
 class SuiRPC {
+  public rpcUrl: string;
+
   constructor(rpcUrl = "https://rpc-testnet.suiscan.xyz:443") {
     this.rpcUrl = rpcUrl;
   }
 
-  async getNormalizedMoveModulesByPackage(packageId) {
+  async getNormalizedMoveModulesByPackage(packageId: string) {
     const payload = {
       jsonrpc: "2.0",
       id: 1,

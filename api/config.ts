@@ -21,6 +21,7 @@ const parseConfigurationFile = (fileName: string) => {
 export const CONFIG = {
 	/// Look for events every 1s
 	POLLING_INTERVAL_MS: 100000,
+	TRACKER_REFRESH_INTERVAL_MS: 30000,
 	DEFAULT_LIMIT: 50,
 	NETWORK: (process.env.NETWORK as Network) || 'testnet',
 	SIMPLE_GOVERNANCE_CONTRACT: parseConfigurationFile('simple-governance')

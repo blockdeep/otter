@@ -14,6 +14,7 @@ import {
 } from "./utils/api-queries";
 import contractProcessorRouter from "./routes/contractProcessor";
 import { SuiRPC } from "./utils/RPC";
+import { refreshTrackers } from "./indexer/event-indexer";
 
 const PORT = process.env.PORT || 50000;
 const app = express();
@@ -111,12 +112,9 @@ app.post("/whitelist-governance", async (req, res) => {
       if (governanceInfo) {
         moduleName = governanceInfo.governanceModuleName;
         // Store other governance info as JSON
-        governanceInfoJSON = JSON.stringify({
-          createProposalFunction: governanceInfo.createProposalFunction,
-          proposalKindEnum: governanceInfo.proposalKindEnum,
-        });
+        governanceInfoJSON = JSON.stringify(governanceInfo);
 
-        console.log(`Found governance module: ${moduleName}`);
+        // Get additional governance data
       } else {
         console.log(`No governance module found in package ${address}`);
       }
@@ -137,6 +135,9 @@ app.post("/whitelist-governance", async (req, res) => {
         active: true, // Set to active by default
       },
     });
+
+    // Refresh event trackers to pick up the new governance address
+    await refreshTrackers();
 
     res.status(201).send({
       message: "Governance address whitelisted successfully",
