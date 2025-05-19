@@ -1,7 +1,13 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { GovernableAction } from "./actionIdentifier";
+import { GovernableAction, ParameterInfo } from "./actionIdentifier";
 import { findMainStruct } from "./contractExtractor";
+
+interface AdditionalParamInfo {
+  name: string;
+  type: string;
+  origParam: ParameterInfo;
+}
 
 /**
  * Generate a governance contract for a Move contract
@@ -16,7 +22,7 @@ export function generateGovernanceContract(
     throw new Error("No governable actions selected for the contract");
   }
 
-  // Extract the exact module name with preserved case from the module declaration
+  // Extract the exact module name from the module declaration
   const moduleDeclaration = contractCode.match(/module\s+(\w+)::(\w+);/);
   const exactModuleName = moduleDeclaration
     ? moduleDeclaration[2]
@@ -29,18 +35,19 @@ export function generateGovernanceContract(
   // Generate the proposal kind enum based on governable actions
   const proposalKindEnum = generateProposalKindEnum(governableActions);
 
-  // Generate execution logic for each action with exact module name
-  const executionLogic = generateExecutionLogic(
+  // Generate the execute_proposal function with dynamically identified parameters
+  const executeProposalFunction = generateExecuteProposalFunction(
     moduleInfo,
     governableActions,
-    exactModuleName
+    exactModuleName,
+    mainStruct
   );
 
   // Generate proposal creation function
   const proposalCreationLogic =
     generateProposalCreationLogic(governableActions);
 
-  // Generate the complete governance contract with exact module name for the app_object type
+  // Generate the complete governance contract with the dynamically generated execute_proposal function
   return `// Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -360,35 +367,7 @@ module ${moduleInfo.packageName}_governance::governance {
     }
     
     /// Execute a proposal's action based on its kind
-    public entry fun execute_proposal(
-        self: &mut GovernanceSystem,
-        proposal_id: ID,
-        app_object: &mut ${moduleInfo.packageName}::${exactModuleName}::${mainStruct},
-        ctx: &mut TxContext,
-    ) {
-        // Ensure proposal exists
-        assert!(table::contains(&self.proposals, proposal_id), EProposalNotFound);
-        let proposal = table::borrow_mut(&mut self.proposals, proposal_id);
-        
-        // Ensure proposal passed
-        assert!(proposal.status == PROPOSAL_STATUS_PASSED, EProposalNotFinalized);
-        
-        // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
-        ${executionLogic}
-        
-        // Set proposal to executed
-        proposal.status = PROPOSAL_STATUS_EXECUTED;
-        
-        event::emit(ProposalExecuted {
-            proposal_id,
-            executor: sender(ctx),
-        });
-        
-        event::emit(ProposalStatusChanged {
-            proposal_id,
-            new_status: PROPOSAL_STATUS_EXECUTED,
-        });
-    }
+    ${executeProposalFunction}
     
     /// Helper to create a unique key for dynamic fields
     fun combine_key(id: ID, key: String): vector<u8> {
@@ -511,57 +490,195 @@ ${enumVariants}
 }
 
 /**
+ * Generate the execute_proposal function with dynamically identified parameters
+ */
+function generateExecuteProposalFunction(
+  moduleInfo: any,
+  governableActions: GovernableAction[],
+  exactModuleName: string,
+  mainStruct: string
+): string {
+  // Collect all unique additional object parameters needed by any action
+  // Skip main object, ctx, and basic types
+  const additionalObjectParams = new Map<string, AdditionalParamInfo>();
+
+  governableActions.forEach((action) => {
+    action.parameters.forEach((param) => {
+      const type = param.type.toLowerCase();
+      // Only include reference parameters that aren't the main object or basic system types
+      if (
+        (type.includes("&") ||
+          type.includes("capability") ||
+          type.includes("cap")) &&
+        !type.includes("txcontext") &&
+        !type.includes("clock") &&
+        !type.includes(mainStruct.toLowerCase()) &&
+        !type.includes("counter") &&
+        !type.includes("campaign")
+      ) {
+        // Create a unique parameter name based on the type
+        const paramName = param.name.endsWith("_cap")
+          ? param.name
+          : `${param.name}_ref`;
+
+        // Store the parameter info
+        additionalObjectParams.set(paramName, {
+          name: paramName,
+          type: param.type,
+          origParam: param,
+        });
+      }
+    });
+  });
+
+  // Generate the parameter list
+  let paramList = [
+    "self: &mut GovernanceSystem",
+    "proposal_id: ID",
+    `app_object: &mut ${moduleInfo.packageName}::${exactModuleName}::${mainStruct}`,
+  ];
+
+  // Add additional parameters
+  additionalObjectParams.forEach((paramInfo, paramName) => {
+    paramList.push(`${paramName}: ${paramInfo.type}`);
+  });
+
+  // Always add context
+  paramList.push("ctx: &mut TxContext");
+
+  // Pass the additional parameters to the execution logic generator
+  const executionLogic = generateExecutionLogic(
+    moduleInfo,
+    governableActions,
+    exactModuleName,
+    mainStruct,
+    Array.from(additionalObjectParams.values())
+  );
+
+  return `public entry fun execute_proposal(
+        ${paramList.join(",\n        ")}
+    ) {
+        // Ensure proposal exists
+        assert!(table::contains(&self.proposals, proposal_id), EProposalNotFound);
+        let proposal = table::borrow_mut(&mut self.proposals, proposal_id);
+        
+        // Ensure proposal passed
+        assert!(proposal.status == PROPOSAL_STATUS_PASSED, EProposalNotFinalized);
+        
+        // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
+        ${executionLogic}
+        
+        // Set proposal to executed
+        proposal.status = PROPOSAL_STATUS_EXECUTED;
+        
+        event::emit(ProposalExecuted {
+            proposal_id,
+            executor: sender(ctx),
+        });
+        
+        event::emit(ProposalStatusChanged {
+            proposal_id,
+            new_status: PROPOSAL_STATUS_EXECUTED,
+        });
+    }`;
+}
+
+/**
  * Generate execution logic for each governable action
  */
 function generateExecutionLogic(
   moduleInfo: any,
   governableActions: GovernableAction[],
-  exactModuleName: string
+  exactModuleName: string,
+  mainStruct: string,
+  additionalParams: AdditionalParamInfo[] = []
 ): string {
   // Generate execution logic for each governable action
   return `match (&proposal.kind) {
             ${governableActions
               .map((action) => {
-                // Filter out common parameters and the main object parameter
-                const filteredParams = action.parameters.filter((param) => {
+                // Filter out basic value parameters (not object references)
+                const valueParams = action.parameters.filter((param) => {
                   const type = param.type.toLowerCase();
                   return (
                     !type.includes("txcontext") &&
                     !type.includes("clock") &&
-                    !type.includes("governance") &&
                     !type.includes("campaign") &&
-                    !type.includes("counter") && // Exclude main struct parameters
-                    !type.includes("&mut")
+                    !type.includes("counter") &&
+                    !type.includes("&mut") &&
+                    !type.includes("&") &&
+                    !type.includes("capability") &&
+                    !type.includes("cap")
                   );
                 });
 
-                // Create list of parameters for function call
-                // Start with app_object
-                let allParams = ["app_object"];
-
-                // Add dereferenced value parameters
-                if (filteredParams.length > 0) {
-                  allParams = allParams.concat(
-                    filteredParams.map((param) => `*${param.name}`)
+                // Identify additional reference parameters this action needs
+                const refParams = action.parameters.filter((param) => {
+                  const type = param.type.toLowerCase();
+                  return (
+                    (type.includes("&") ||
+                      type.includes("capability") ||
+                      type.includes("cap")) &&
+                    !type.includes("txcontext") &&
+                    !type.includes("clock") &&
+                    !type.includes(mainStruct.toLowerCase())
                   );
+                });
+
+                // Check if this action needs a ctx parameter
+                const needsCtx = action.parameters.some((param) =>
+                  param.type.toLowerCase().includes("txcontext")
+                );
+
+                // Create the parameter list for the function call
+                let paramList = ["app_object"];
+
+                // Add regular value parameters with dereferencing
+                if (valueParams.length > 0) {
+                  valueParams.forEach((param) => {
+                    paramList.push(`*${param.name}`);
+                  });
                 }
 
-                // Don't add ctx parameter as it's auto-inferred
+                // Match and add additional reference parameters
+                refParams.forEach((refParam) => {
+                  // Find the matching parameter from the execute_proposal function
+                  const matchingParam = additionalParams.find(
+                    (ap) =>
+                      ap.origParam.type.toLowerCase() ===
+                        refParam.type.toLowerCase() ||
+                      refParam.name === ap.name ||
+                      refParam.type
+                        .toLowerCase()
+                        .includes(ap.name.toLowerCase())
+                  );
 
-                if (filteredParams.length > 0) {
-                  const paramList = filteredParams
+                  if (matchingParam) {
+                    paramList.push(matchingParam.name);
+                  }
+                });
+
+                // Add ctx parameter only if needed
+                if (needsCtx) {
+                  paramList.push("ctx");
+                }
+
+                const paramString = paramList.join(", ");
+
+                if (valueParams.length > 0) {
+                  const paramNames = valueParams
                     .map((param) => `${param.name}`)
                     .join(", ");
                   return `ProposalKind::${capitalizeFirstLetter(
                     action.name
-                  )} { ${paramList} } => {
-                ${exactModuleName}::${action.name}(${allParams.join(", ")})
+                  )} { ${paramNames} } => {
+                ${exactModuleName}::${action.name}(${paramString})
             }`;
                 } else {
                   return `ProposalKind::${capitalizeFirstLetter(
                     action.name
                   )} => {
-                ${exactModuleName}::${action.name}(${allParams.join(", ")})
+                ${exactModuleName}::${action.name}(${paramString})
             }`;
                 }
               })

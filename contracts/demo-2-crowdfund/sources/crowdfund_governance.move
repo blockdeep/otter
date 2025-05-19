@@ -65,6 +65,7 @@ module crowdfund_governance::governance {
     
     /// Proposal Kinds -- SPECIFIC TO THE CONTRACT THAT HAS TO BE GOVERNED
     public enum ProposalKind has drop, store {
+        Transfer_governance { new_governor: address },
         Transfer_funds { recipient: address, amount: u64 }
     }
     
@@ -186,16 +187,20 @@ module crowdfund_governance::governance {
         description: String,
         voting_period_seconds: u64,
         clock: &Clock,
-        proposal_kind: u8, // 0-0 for different proposal types
-        recipient_0: address, // For transfer_funds,
-        amount_0: u64, // For transfer_funds
+        proposal_kind: u8, // 0-1 for different proposal types
+        new_governor_0: address, // For transfer_governance,
+        recipient_1: address, // For transfer_funds,
+        amount_1: u64, // For transfer_funds
         ctx: &mut TxContext,
     ) : ID {
         let pK: ProposalKind;
         // Create the appropriate proposal kind based on the proposal_kind parameter
         match (proposal_kind) {
             0 => {
-                pK = ProposalKind::Transfer_funds { recipient: recipient_0, amount: amount_0 };
+                pK = ProposalKind::Transfer_governance { new_governor: new_governor_0 };
+            },
+            1 => {
+                pK = ProposalKind::Transfer_funds { recipient: recipient_1, amount: amount_1 };
             },
             _ => {
                 abort EInvalidProposalKind
@@ -386,7 +391,8 @@ module crowdfund_governance::governance {
         self: &mut GovernanceSystem,
         proposal_id: ID,
         app_object: &mut crowdfund::Crowdfund::Campaign,
-        ctx: &mut TxContext,
+        governance_cap: &mut crowdfund::Crowdfund::GovernanceCapability,
+        ctx: &mut TxContext
     ) {
         // Ensure proposal exists
         assert!(table::contains(&self.proposals, proposal_id), EProposalNotFound);
@@ -397,8 +403,11 @@ module crowdfund_governance::governance {
         
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
         match (&proposal.kind) {
+            ProposalKind::Transfer_governance { new_governor } => {
+                Crowdfund::transfer_governance(app_object, *new_governor, governance_cap)
+            },
             ProposalKind::Transfer_funds { recipient, amount } => {
-                Crowdfund::transfer_funds(app_object, *recipient, *amount)
+                Crowdfund::transfer_funds(app_object, *recipient, *amount, _governance_cap, ctx)
             }
         };
         
