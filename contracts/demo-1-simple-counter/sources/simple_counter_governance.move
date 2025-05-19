@@ -388,8 +388,8 @@ module simple_counter_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut simple_counter::Counter,
-        ctx: &mut TxContext,
+        app_object: &mut simple_counter::simple_counter::Counter,
+        ctx: &mut TxContext
     ) {
         // Ensure proposal exists
         assert!(table::contains(&self.proposals, proposal_id), EProposalNotFound);

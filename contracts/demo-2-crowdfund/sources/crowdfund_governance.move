@@ -391,7 +391,8 @@ module crowdfund_governance::governance {
         self: &mut GovernanceSystem,
         proposal_id: ID,
         app_object: &mut crowdfund::Crowdfund::Campaign,
-        governance_cap: &mut crowdfund::Crowdfund::GovernanceCapability,
+        governance_cap: GovernanceCapability,
+        _governance_cap: &crowdfund::Crowdfund::GovernanceCapability,
         ctx: &mut TxContext
     ) {
         // Ensure proposal exists
@@ -404,10 +405,10 @@ module crowdfund_governance::governance {
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
         match (&proposal.kind) {
             ProposalKind::Transfer_governance { new_governor } => {
-                Crowdfund::transfer_governance(app_object, *new_governor, governance_cap)
+                Crowdfund::transfer_governance(governance_cap, *new_governor)
             },
             ProposalKind::Transfer_funds { recipient, amount } => {
-                Crowdfund::transfer_funds(app_object, *recipient, *amount, _governance_cap, ctx)
+                Crowdfund::transfer_funds(app_object, *recipient, *amount, governance_cap, ctx)
             }
         };
         

@@ -499,29 +499,54 @@ function generateExecuteProposalFunction(
   mainStruct: string
 ): string {
   // Collect all unique additional object parameters needed by any action
-  // Skip main object, ctx, and basic types
   const additionalObjectParams = new Map<string, AdditionalParamInfo>();
 
+  // First, identify all unique object parameters across all actions
   governableActions.forEach((action) => {
     action.parameters.forEach((param) => {
-      const type = param.type.toLowerCase();
-      // Only include reference parameters that aren't the main object or basic system types
+      // Skip common parameters like TxContext and Clock
       if (
-        (type.includes("&") ||
-          type.includes("capability") ||
-          type.includes("cap")) &&
-        !type.includes("txcontext") &&
-        !type.includes("clock") &&
-        !type.includes(mainStruct.toLowerCase()) &&
-        !type.includes("counter") &&
-        !type.includes("campaign")
+        param.type.toLowerCase().includes("txcontext") ||
+        param.type.toLowerCase().includes("clock")
       ) {
-        // Create a unique parameter name based on the type
-        const paramName = param.name.endsWith("_cap")
-          ? param.name
-          : `${param.name}_ref`;
+        return;
+      }
 
-        // Store the parameter info
+      // Skip the main struct parameter which is already handled
+      if (
+        param.type.toLowerCase().includes(mainStruct.toLowerCase()) ||
+        (param.type.toLowerCase().includes("campaign") &&
+          mainStruct.includes("Campaign")) ||
+        (param.type.toLowerCase().includes("counter") &&
+          mainStruct.includes("Counter"))
+      ) {
+        return;
+      }
+
+      // Keep all other object parameters
+      if (
+        param.type.includes("&") ||
+        param.type.includes("Capability") ||
+        param.type.includes("Cap")
+      ) {
+        // Create a unique parameter name
+        const typeMatch = param.type.match(/([a-zA-Z0-9_]+)(?:\>|$)/);
+        const typeName = typeMatch ? typeMatch[1] : "ObjParam";
+        const baseName = param.name || `${typeName.toLowerCase()}_param`;
+        let paramName = baseName;
+
+        // Ensure unique parameter names
+        let counter = 1;
+        while (
+          Array.from(additionalObjectParams.values()).some(
+            (p) => p.name === paramName
+          )
+        ) {
+          paramName = `${baseName}_${counter}`;
+          counter++;
+        }
+
+        // Use the exact parameter type as provided
         additionalObjectParams.set(paramName, {
           name: paramName,
           type: param.type,
@@ -531,7 +556,7 @@ function generateExecuteProposalFunction(
     });
   });
 
-  // Generate the parameter list
+  // Generate the parameter list for execute_proposal
   let paramList = [
     "self: &mut GovernanceSystem",
     "proposal_id: ID",
@@ -539,8 +564,8 @@ function generateExecuteProposalFunction(
   ];
 
   // Add additional parameters
-  additionalObjectParams.forEach((paramInfo, paramName) => {
-    paramList.push(`${paramName}: ${paramInfo.type}`);
+  additionalObjectParams.forEach((paramInfo) => {
+    paramList.push(`${paramInfo.name}: ${paramInfo.type}`);
   });
 
   // Always add context
@@ -597,73 +622,106 @@ function generateExecutionLogic(
   return `match (&proposal.kind) {
             ${governableActions
               .map((action) => {
-                // Filter out basic value parameters (not object references)
+                // First, analyze the function's parameter structure
+                const isMainStructFirstParam =
+                  action.parameters.length > 0 &&
+                  (action.parameters[0].type
+                    .toLowerCase()
+                    .includes(mainStruct.toLowerCase()) ||
+                    (action.parameters[0].type
+                      .toLowerCase()
+                      .includes("campaign") &&
+                      mainStruct.includes("Campaign")) ||
+                    (action.parameters[0].type
+                      .toLowerCase()
+                      .includes("counter") &&
+                      mainStruct.includes("Counter")));
+
+                // Get value parameters to include in the match pattern
                 const valueParams = action.parameters.filter((param) => {
                   const type = param.type.toLowerCase();
                   return (
                     !type.includes("txcontext") &&
                     !type.includes("clock") &&
-                    !type.includes("campaign") &&
-                    !type.includes("counter") &&
-                    !type.includes("&mut") &&
                     !type.includes("&") &&
                     !type.includes("capability") &&
-                    !type.includes("cap")
+                    !type.includes("cap") &&
+                    !type.includes(mainStruct.toLowerCase()) &&
+                    !type.includes("campaign") &&
+                    !type.includes("counter")
                   );
                 });
 
-                // Identify additional reference parameters this action needs
-                const refParams = action.parameters.filter((param) => {
-                  const type = param.type.toLowerCase();
-                  return (
-                    (type.includes("&") ||
-                      type.includes("capability") ||
-                      type.includes("cap")) &&
-                    !type.includes("txcontext") &&
-                    !type.includes("clock") &&
-                    !type.includes(mainStruct.toLowerCase())
-                  );
-                });
+                // Construct the parameter list for the function call
+                const functionParams: string[] = [];
 
-                // Check if this action needs a ctx parameter
-                const needsCtx = action.parameters.some((param) =>
-                  param.type.toLowerCase().includes("txcontext")
-                );
+                // Analyze the parameter order from the function definition
+                action.parameters.forEach((param) => {
+                  const paramType = param.type.toLowerCase();
 
-                // Create the parameter list for the function call
-                let paramList = ["app_object"];
+                  // Main struct parameter
+                  if (
+                    paramType.includes(mainStruct.toLowerCase()) ||
+                    (paramType.includes("campaign") &&
+                      mainStruct.includes("Campaign")) ||
+                    (paramType.includes("counter") &&
+                      mainStruct.includes("Counter"))
+                  ) {
+                    functionParams.push("app_object");
+                  }
+                  // Value parameters from ProposalKind enum
+                  else if (
+                    !paramType.includes("&") &&
+                    !paramType.includes("txcontext") &&
+                    !paramType.includes("clock") &&
+                    !paramType.includes("capability") &&
+                    !paramType.includes("cap")
+                  ) {
+                    // Find the corresponding value parameter
+                    const valueParam = valueParams.find(
+                      (vp) => vp.name === param.name || vp.type === param.type
+                    );
+                    if (valueParam) {
+                      functionParams.push(`*${valueParam.name}`);
+                    }
+                  }
+                  // Object parameters (non-main)
+                  else if (
+                    (paramType.includes("&") ||
+                      paramType.includes("capability") ||
+                      paramType.includes("cap")) &&
+                    !paramType.includes("txcontext") &&
+                    !paramType.includes("clock")
+                  ) {
+                    // Find matching parameter from additional params
+                    // Match by type similarity or name
+                    const typeMatch = param.type.match(
+                      /([a-zA-Z0-9_]+)(?:\>|$)/
+                    );
+                    const typeName = typeMatch
+                      ? typeMatch[1].toLowerCase()
+                      : "";
 
-                // Add regular value parameters with dereferencing
-                if (valueParams.length > 0) {
-                  valueParams.forEach((param) => {
-                    paramList.push(`*${param.name}`);
-                  });
-                }
+                    const matchingParam = additionalParams.find((ap) => {
+                      const apType = ap.type.toLowerCase();
+                      return (
+                        apType.includes(typeName) ||
+                        typeName.includes(ap.name.toLowerCase()) ||
+                        ap.name.toLowerCase().includes(typeName)
+                      );
+                    });
 
-                // Match and add additional reference parameters
-                refParams.forEach((refParam) => {
-                  // Find the matching parameter from the execute_proposal function
-                  const matchingParam = additionalParams.find(
-                    (ap) =>
-                      ap.origParam.type.toLowerCase() ===
-                        refParam.type.toLowerCase() ||
-                      refParam.name === ap.name ||
-                      refParam.type
-                        .toLowerCase()
-                        .includes(ap.name.toLowerCase())
-                  );
-
-                  if (matchingParam) {
-                    paramList.push(matchingParam.name);
+                    if (matchingParam) {
+                      functionParams.push(matchingParam.name);
+                    }
+                  }
+                  // TxContext parameter
+                  else if (paramType.includes("txcontext")) {
+                    functionParams.push("ctx");
                   }
                 });
 
-                // Add ctx parameter only if needed
-                if (needsCtx) {
-                  paramList.push("ctx");
-                }
-
-                const paramString = paramList.join(", ");
+                const paramString = functionParams.join(", ");
 
                 if (valueParams.length > 0) {
                   const paramNames = valueParams
