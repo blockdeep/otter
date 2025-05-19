@@ -470,9 +470,22 @@ function generateProposalKindEnum(
   // Generate the proposal kind enum based on governable actions
   const enumVariants = governableActions
     .map((action) => {
+      // Get non-main object parameters
+      const relevantParams = action.parameters.filter((param) => {
+        const type = param.type.toLowerCase();
+        // Filter out main object parameters and common system parameters
+        return (
+          !type.includes("txcontext") &&
+          !type.includes("clock") &&
+          !type.includes("governance") &&
+          !type.includes("campaign") &&
+          !type.includes("&mut") // Exclude mutable references
+        );
+      });
+
       // Create enum variant with parameters if needed
-      if (action.parameters.length > 0) {
-        const params = action.parameters
+      if (relevantParams.length > 0) {
+        const params = relevantParams
           .map((param) => `${param.name}: ${param.type}`)
           .join(", ");
         return `        ${capitalizeFirstLetter(action.name)} { ${params} }`;
@@ -498,14 +511,15 @@ function generateExecutionLogic(
   return `match (&proposal.kind) {
             ${governableActions
               .map((action) => {
-                // Filter out common parameters that shouldn't be passed to the function
+                // Filter out common parameters and the main object parameter
                 const filteredParams = action.parameters.filter((param) => {
                   const type = param.type.toLowerCase();
                   return (
                     !type.includes("txcontext") &&
                     !type.includes("clock") &&
                     !type.includes("governance") &&
-                    !type.includes("campaign") && // Skip the main object as it's passed separately
+                    !type.includes("campaign") &&
+                    !type.includes("counter") && // Exclude main struct parameters
                     !type.includes("&mut")
                   );
                 });
@@ -547,12 +561,13 @@ function generateProposalCreationLogic(
   governableActions.forEach((action, actionIndex) => {
     action.parameters.forEach((param) => {
       const type = param.type.toLowerCase();
-      // Skip common parameters
+      // Skip common parameters and main object parameters
       if (
         !type.includes("txcontext") &&
         !type.includes("clock") &&
         !type.includes("governance") &&
         !type.includes("campaign") &&
+        !type.includes("counter") && // Exclude main struct parameters
         !type.includes("&mut")
       ) {
         // Create unique parameter name by combining action index and param name
@@ -566,6 +581,7 @@ function generateProposalCreationLogic(
     .map(([name, type]) => `${name}: ${type}`)
     .join(",\n        ");
 
+  // Modify the match statement to include commas after each case
   return `public entry fun create_proposal(
         self: &mut GovernanceSystem,
         governance_coins: &Coin<GOVTOKEN>,
@@ -591,6 +607,7 @@ function generateProposalCreationLogic(
                     !type.includes("clock") &&
                     !type.includes("governance") &&
                     !type.includes("campaign") &&
+                    !type.includes("counter") && // Exclude main struct parameters
                     !type.includes("&mut")
                   );
                 });
@@ -603,11 +620,11 @@ function generateProposalCreationLogic(
                 pK = ProposalKind::${capitalizeFirstLetter(
                   action.name
                 )} { ${paramNames} };
-            }`;
+            },`; // Added comma here
                 } else {
                   return `${index} => {
                 pK = ProposalKind::${capitalizeFirstLetter(action.name)};
-            }`;
+            },`; // Added comma here
                 }
               })
               .join("\n            ")}

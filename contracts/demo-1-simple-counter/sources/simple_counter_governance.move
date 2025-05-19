@@ -65,8 +65,8 @@ module simple_counter_governance::governance {
     
     /// Proposal Kinds -- SPECIFIC TO THE CONTRACT THAT HAS TO BE GOVERNED
     public enum ProposalKind has drop, store {
-        Increment { counter: &mut Counter },
-        Set_value { counter: &mut Counter, value: u64 }
+        Increment,
+        Set_value { value: u64 }
     }
     
     /// A governance proposal
@@ -115,6 +115,7 @@ module simple_counter_governance::governance {
         proposal_id: ID,
         creator: address,
         title: String,
+        description: String,
         voting_ends_at: u64,
         threshold: u64,
     }
@@ -187,7 +188,7 @@ module simple_counter_governance::governance {
         voting_period_seconds: u64,
         clock: &Clock,
         proposal_kind: u8, // 0-1 for different proposal types
-        value_1: u64 // For set_value
+        value_1: u64, // For set_value,
         ctx: &mut TxContext,
     ) : ID {
         let pK: ProposalKind;
@@ -195,10 +196,10 @@ module simple_counter_governance::governance {
         match (proposal_kind) {
             0 => {
                 pK = ProposalKind::Increment;
-            }
+            },
             1 => {
-                pK = ProposalKind::Set_value { value_1 };
-            }
+                pK = ProposalKind::Set_value { value: value_1 };
+            },
             _ => {
                 abort EInvalidProposalKind
             }
@@ -238,6 +239,7 @@ module simple_counter_governance::governance {
             proposal_id,
             creator,
             title,
+            description,
             voting_ends_at: voting_ends_at_ms,
             threshold: MIN_PROPOSAL_THRESHOLD,
         });
@@ -386,7 +388,7 @@ module simple_counter_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut simple_counter::simple_counter::Counter,
+        app_object: &mut simple_counter::Counter,
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -399,10 +401,10 @@ module simple_counter_governance::governance {
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
         match (&proposal.kind) {
             ProposalKind::Increment => {
-                simple_counter::simple_counter::increment(app_object, ctx)
+                simple_counter::increment(app_object)
             },
             ProposalKind::Set_value { value } => {
-                simple_counter::simple_counter::set_value(app_object, value, ctx)
+                simple_counter::set_value(app_object, *value)
             }
         };
         
