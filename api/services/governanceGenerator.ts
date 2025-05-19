@@ -498,8 +498,9 @@ function generateExecuteProposalFunction(
   exactModuleName: string,
   mainStruct: string
 ): string {
-  // Collect all unique additional object parameters needed by any action
-  const additionalObjectParams = new Map<string, AdditionalParamInfo>();
+  // Create a set to track already added types to prevent duplicates
+  const addedTypeSignatures = new Set<string>();
+  const additionalObjectParams: AdditionalParamInfo[] = [];
 
   // First, identify all unique object parameters across all actions
   governableActions.forEach((action) => {
@@ -529,29 +530,55 @@ function generateExecuteProposalFunction(
         param.type.includes("Capability") ||
         param.type.includes("Cap")
       ) {
-        // Create a unique parameter name
+        // Extract the proper reference type '&' or '&mut'
+        const isReference = param.type.includes("&");
+        const isMutableRef = param.type.includes("&mut");
+
+        // Extract the type name from the original type
         const typeMatch = param.type.match(/([a-zA-Z0-9_]+)(?:\>|$)/);
         const typeName = typeMatch ? typeMatch[1] : "ObjParam";
+
+        // Create a normalized type signature for deduplication
+        let fullTypePath: string;
+
+        // If it already has a full path, use it as is
+        if (param.type.includes("::")) {
+          fullTypePath = param.type;
+        }
+        // Otherwise, construct the full path
+        else {
+          if (isMutableRef) {
+            fullTypePath = `&mut ${moduleInfo.packageName}::${exactModuleName}::${typeName}`;
+          } else if (isReference) {
+            fullTypePath = `&${moduleInfo.packageName}::${exactModuleName}::${typeName}`;
+          } else {
+            fullTypePath = `${moduleInfo.packageName}::${exactModuleName}::${typeName}`;
+          }
+        }
+
+        // Create a unique parameter name
         const baseName = param.name || `${typeName.toLowerCase()}_param`;
         let paramName = baseName;
 
         // Ensure unique parameter names
         let counter = 1;
-        while (
-          Array.from(additionalObjectParams.values()).some(
-            (p) => p.name === paramName
-          )
-        ) {
+        while (additionalObjectParams.some((p) => p.name === paramName)) {
           paramName = `${baseName}_${counter}`;
           counter++;
         }
 
-        // Use the exact parameter type as provided
-        additionalObjectParams.set(paramName, {
-          name: paramName,
-          type: param.type,
-          origParam: param,
-        });
+        // Use a normalized type signature for deduplication check
+        const typeSignature = fullTypePath.toLowerCase();
+
+        // Only add if we haven't already added this type
+        if (!addedTypeSignatures.has(typeSignature)) {
+          addedTypeSignatures.add(typeSignature);
+          additionalObjectParams.push({
+            name: paramName,
+            type: fullTypePath,
+            origParam: param,
+          });
+        }
       }
     });
   });
@@ -577,7 +604,7 @@ function generateExecuteProposalFunction(
     governableActions,
     exactModuleName,
     mainStruct,
-    Array.from(additionalObjectParams.values())
+    additionalObjectParams
   );
 
   return `public entry fun execute_proposal(
@@ -622,21 +649,6 @@ function generateExecutionLogic(
   return `match (&proposal.kind) {
             ${governableActions
               .map((action) => {
-                // First, analyze the function's parameter structure
-                const isMainStructFirstParam =
-                  action.parameters.length > 0 &&
-                  (action.parameters[0].type
-                    .toLowerCase()
-                    .includes(mainStruct.toLowerCase()) ||
-                    (action.parameters[0].type
-                      .toLowerCase()
-                      .includes("campaign") &&
-                      mainStruct.includes("Campaign")) ||
-                    (action.parameters[0].type
-                      .toLowerCase()
-                      .includes("counter") &&
-                      mainStruct.includes("Counter")));
-
                 // Get value parameters to include in the match pattern
                 const valueParams = action.parameters.filter((param) => {
                   const type = param.type.toLowerCase();
@@ -693,8 +705,7 @@ function generateExecutionLogic(
                     !paramType.includes("txcontext") &&
                     !paramType.includes("clock")
                   ) {
-                    // Find matching parameter from additional params
-                    // Match by type similarity or name
+                    // Extract key type information for matching
                     const typeMatch = param.type.match(
                       /([a-zA-Z0-9_]+)(?:\>|$)/
                     );
@@ -702,12 +713,17 @@ function generateExecutionLogic(
                       ? typeMatch[1].toLowerCase()
                       : "";
 
+                    // Try to find a matching parameter
                     const matchingParam = additionalParams.find((ap) => {
                       const apType = ap.type.toLowerCase();
+                      // Match by type name, reference style, or parameter name
                       return (
                         apType.includes(typeName) ||
-                        typeName.includes(ap.name.toLowerCase()) ||
-                        ap.name.toLowerCase().includes(typeName)
+                        (param.name &&
+                          ap.name
+                            .toLowerCase()
+                            .includes(param.name.toLowerCase())) ||
+                        (typeName && ap.type.toLowerCase().includes(typeName))
                       );
                     });
 

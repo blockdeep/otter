@@ -391,7 +391,7 @@ module crowdfund_governance::governance {
         self: &mut GovernanceSystem,
         proposal_id: ID,
         app_object: &mut crowdfund::Crowdfund::Campaign,
-        governance_cap: GovernanceCapability,
+        governance_cap: &crowdfund::Crowdfund::GovernanceCapability,
         _governance_cap: &crowdfund::Crowdfund::GovernanceCapability,
         ctx: &mut TxContext
     ) {
