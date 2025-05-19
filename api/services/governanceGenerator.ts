@@ -16,6 +16,12 @@ export function generateGovernanceContract(
     throw new Error("No governable actions selected for the contract");
   }
 
+  // Extract the exact module name with preserved case from the module declaration
+  const moduleDeclaration = contractCode.match(/module\s+(\w+)::(\w+);/);
+  const exactModuleName = moduleDeclaration
+    ? moduleDeclaration[2]
+    : moduleInfo.moduleName;
+
   // Use provided main struct name or try to find it in contract code
   const mainStruct =
     mainStructName || findMainStruct(contractCode) || "AppObject";
@@ -23,14 +29,18 @@ export function generateGovernanceContract(
   // Generate the proposal kind enum based on governable actions
   const proposalKindEnum = generateProposalKindEnum(governableActions);
 
-  // Generate execution logic for each action
-  const executionLogic = generateExecutionLogic(moduleInfo, governableActions);
+  // Generate execution logic for each action with exact module name
+  const executionLogic = generateExecutionLogic(
+    moduleInfo,
+    governableActions,
+    exactModuleName
+  );
 
   // Generate proposal creation function
   const proposalCreationLogic =
     generateProposalCreationLogic(governableActions);
 
-  // Generate the complete governance contract
+  // Generate the complete governance contract with exact module name for the app_object type
   return `// Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -353,7 +363,7 @@ module ${moduleInfo.packageName}_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut ${moduleInfo.packageName}::${mainStruct},
+        app_object: &mut ${moduleInfo.packageName}::${exactModuleName}::${mainStruct},
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -505,7 +515,8 @@ ${enumVariants}
  */
 function generateExecutionLogic(
   moduleInfo: any,
-  governableActions: GovernableAction[]
+  governableActions: GovernableAction[],
+  exactModuleName: string
 ): string {
   // Generate execution logic for each governable action
   return `match (&proposal.kind) {
@@ -524,19 +535,18 @@ function generateExecutionLogic(
                   );
                 });
 
-                // Determine which parameters to pass to the function
-                // For most functions, we just need app_object and additional params
-                const additionalParams =
-                  filteredParams.length > 0
-                    ? ", " +
-                      filteredParams.map((param) => `*${param.name}`).join(", ")
-                    : "";
+                // Create list of parameters for function call
+                // Start with app_object
+                let allParams = ["app_object"];
 
-                // Check if the function needs context
-                const needsContext = action.parameters.some((param) =>
-                  param.type.toLowerCase().includes("txcontext")
-                );
-                const contextParam = needsContext ? ", ctx" : "";
+                // Add dereferenced value parameters
+                if (filteredParams.length > 0) {
+                  allParams = allParams.concat(
+                    filteredParams.map((param) => `*${param.name}`)
+                  );
+                }
+
+                // Don't add ctx parameter as it's auto-inferred
 
                 if (filteredParams.length > 0) {
                   const paramList = filteredParams
@@ -545,17 +555,13 @@ function generateExecutionLogic(
                   return `ProposalKind::${capitalizeFirstLetter(
                     action.name
                   )} { ${paramList} } => {
-                ${moduleInfo.packageName}::${
-                    action.name
-                  }(app_object${additionalParams}${contextParam})
+                ${exactModuleName}::${action.name}(${allParams.join(", ")})
             }`;
                 } else {
                   return `ProposalKind::${capitalizeFirstLetter(
                     action.name
                   )} => {
-                ${moduleInfo.packageName}::${
-                    action.name
-                  }(app_object${contextParam})
+                ${exactModuleName}::${action.name}(${allParams.join(", ")})
             }`;
                 }
               })

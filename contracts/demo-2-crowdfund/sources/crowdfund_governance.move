@@ -385,7 +385,7 @@ module crowdfund_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut Crowdfund::Campaign,
+        app_object: &mut crowdfund::Crowdfund::Campaign,
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -398,7 +398,7 @@ module crowdfund_governance::governance {
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
         match (&proposal.kind) {
             ProposalKind::Transfer_funds { recipient, amount } => {
-                Crowdfund::transfer_funds(app_object, *recipient, *amount, ctx)
+                Crowdfund::transfer_funds(app_object, *recipient, *amount)
             }
         };
         
