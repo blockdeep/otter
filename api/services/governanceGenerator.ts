@@ -7,6 +7,7 @@ interface AdditionalParamInfo {
   name: string;
   type: string;
   origParam: ParameterInfo;
+  isOwned: boolean;
 }
 
 /**
@@ -573,10 +574,14 @@ function generateExecuteProposalFunction(
         // Only add if we haven't already added this type
         if (!addedTypeSignatures.has(typeSignature)) {
           addedTypeSignatures.add(typeSignature);
+
+          const isOwned = !param.type.includes("&");
+
           additionalObjectParams.push({
             name: paramName,
             type: fullTypePath,
             origParam: param,
+            isOwned,
           });
         }
       }
@@ -728,7 +733,12 @@ function generateExecutionLogic(
                     });
 
                     if (matchingParam) {
-                      functionParams.push(matchingParam.name);
+                      const shouldCopy = matchingParam.isOwned;
+                      const passedParam = shouldCopy
+                        ? `object::copy(${matchingParam.name})`
+                        : matchingParam.name;
+
+                      functionParams.push(passedParam);
                     }
                   }
                   // TxContext parameter
