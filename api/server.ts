@@ -13,6 +13,7 @@ import {
   WhereParamTypes,
 } from "./utils/api-queries";
 import contractProcessorRouter from "./routes/contractProcessor";
+import { SuiRPC } from "./utils/RPC";
 
 const PORT = process.env.PORT || 50000;
 const app = express();
@@ -20,7 +21,7 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use('/api', contractProcessorRouter);
+app.use("/api", contractProcessorRouter);
 
 app.get("/", async (req, res) => {
   res.send({ message: "🚀 API is functional 🚀" });
@@ -28,11 +29,11 @@ app.get("/", async (req, res) => {
 
 app.get("/proposals", async (req, res) => {
   const acceptedQueries: WhereParam[] = [
-    { 
+    {
       key: "executed",
       type: WhereParamTypes.BOOLEAN,
     },
-    { 
+    {
       key: "objectId",
       type: WhereParamTypes.STRING,
     },
@@ -55,14 +56,14 @@ app.get("/proposals", async (req, res) => {
   }
 });
 
-app.get('/governances', async (req, res) => {
+app.get("/governances", async (req, res) => {
   const acceptedQueries = [
     {
-      key: 'active',
+      key: "active",
       type: WhereParamTypes.BOOLEAN,
     },
     {
-      key: 'projectName',
+      key: "projectName",
       type: WhereParamTypes.STRING,
     },
   ];
@@ -85,40 +86,55 @@ app.get('/governances', async (req, res) => {
 
 app.post("/whitelist-governance", async (req, res) => {
   try {
-    // Check if the provided password matches the one in .env
-    const { password, address, projectName, details } = req.body;
+    // Extract the governance data from the request body
+    const { address, projectName, details } = req.body;
 
     // Validate required fields
-    if (!password || !address || !projectName || !details) {
+    if (!address || !projectName || !details) {
       res.status(400).send({
         error:
-          "Missing required fields: password, address, projectName, and details are required",
+          "Missing required fields: address, projectName, and details are required",
       });
       return;
     }
 
-    // Validate the password against the one stored in .env
-    const serverPassword = process.env.GOVERNANCE_WHITELIST_PASSWORD;
-    if (!serverPassword) {
-      res.status(500).send({
-        error:
-          "Server configuration error: Password not set in environment variables",
-      });
-      return;
+    // Create RPC instance to fetch governance module info
+    const rpc = new SuiRPC();
+    let governanceInfo = null;
+    let moduleName = null;
+    let governanceInfoJSON = null;
+
+    try {
+      // Fetch governance info from the package
+      governanceInfo = await rpc.getGovernanceInfo(address);
+
+      if (governanceInfo) {
+        moduleName = governanceInfo.governanceModuleName;
+        // Store other governance info as JSON
+        governanceInfoJSON = JSON.stringify({
+          createProposalFunction: governanceInfo.createProposalFunction,
+          proposalKindEnum: governanceInfo.proposalKindEnum,
+        });
+
+        console.log(`Found governance module: ${moduleName}`);
+      } else {
+        console.log(`No governance module found in package ${address}`);
+      }
+    } catch (rpcError) {
+      console.error("Error fetching governance info:", rpcError);
+      // Continue with basic information if RPC fails
     }
 
-    if (password !== serverPassword) {
-      res.status(401).send({ error: "Invalid password" });
-      return;
-    }
-
-    // If password validation passes, add the governance address to the database
+    // Add the governance address to the database
     const newGovernanceAddress = await prisma.governanceAddress.create({
       data: {
         address,
         projectName,
-        createdAt: new Date(),
         details,
+        createdAt: new Date(),
+        moduleName, // Will be null if not found
+        governanceInfo: governanceInfoJSON, // Will be null if not found
+        active: true, // Set to active by default
       },
     });
 
@@ -127,11 +143,11 @@ app.post("/whitelist-governance", async (req, res) => {
       data: newGovernanceAddress,
     });
   } catch (e) {
-    console.error(e);
-    res.status(400).send(e);
+    console.error("Error whitelisting governance:", e);
+    res.status(400).send({
+      error: e instanceof Error ? e.message : "Failed to whitelist governance",
+    });
   }
 });
 
-app.listen(PORT, () =>
-  console.log(`🚀 Server ready at: ${PORT}`)
-);
+app.listen(PORT, () => console.log(`🚀 Server ready at: ${PORT}`));

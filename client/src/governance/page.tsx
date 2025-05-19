@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,15 +46,12 @@ export default function GovernancePage() {
       try {
         setIsLoading(true);
         setError(null);
-
         const response = await fetch(`${API_URL}/governances?active=true`);
-
         if (!response.ok) {
           throw new Error(
             `Error fetching governance data: ${response.statusText}`,
           );
         }
-
         const data: ApiResponse = await response.json();
         setGovernanceApps(data.data);
       } catch (err) {
@@ -68,13 +65,17 @@ export default function GovernancePage() {
         setIsLoading(false);
       }
     };
-
     fetchGovernanceApps();
   }, [API_URL]);
 
   const handleViewProposals = (address: string) => {
     // Navigate to the proposals page with the app ID
     navigate(`/governance/${address}/proposals`);
+  };
+
+  const handleWhitelistGovernance = () => {
+    // Navigate to the whitelist governance page
+    navigate(`/governance/whitelist`);
   };
 
   // Show loading state
@@ -122,13 +123,22 @@ export default function GovernancePage() {
       <main className="flex-1">
         <section className="py-12 md:py-16">
           <div className="container px-4 md:px-6 mx-auto">
-            <div className="flex flex-col items-start space-y-4">
-              <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl">
-                Governance Overview
-              </h1>
-              <p className="text-muted-foreground md:text-xl max-w-[700px]">
-                Explore and participate in governance for dApps built on Sui
-              </p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 mb-8">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl">
+                  Governance Overview
+                </h1>
+                <p className="text-muted-foreground md:text-xl max-w-[700px]">
+                  Explore and participate in governance for dApps built on Sui
+                </p>
+              </div>
+              <Button
+                className="bg-primary hover:bg-primary/90 text-primary-foreground border border-black"
+                onClick={handleWhitelistGovernance}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Whitelist your governance
+              </Button>
             </div>
 
             {governanceApps.length === 0 ? (
