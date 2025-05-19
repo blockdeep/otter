@@ -42,6 +42,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Interactive Flowchart Section */}
+        {/* <GovernanceFlowChart /> */}
+
         {/* Features Section */}
         <section className="py-12 md:py-24 bg-card">
           <div className="container px-4 md:px-6 mx-auto">
