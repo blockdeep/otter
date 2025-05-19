@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-module simple_counter_governance::governance {
+module crowdfund_governance::governance {
     use std::string::{Self, String};
     use sui::table::{Self, Table};
     use sui::tx_context::{sender};
@@ -11,10 +11,10 @@ module simple_counter_governance::governance {
     use sui::clock::{Self, Clock};
     
     // Import the govtoken module
-    use simple_counter_governance::govtoken::{GOVTOKEN};
+    use crowdfund_governance::govtoken::{GOVTOKEN};
     
     // Import the app module being governed
-    use simple_counter::simple_counter;
+    use crowdfund::Crowdfund;
     
     /// Error constants
     const EInsufficientVotingPower: u64 = 1;
@@ -65,8 +65,7 @@ module simple_counter_governance::governance {
     
     /// Proposal Kinds -- SPECIFIC TO THE CONTRACT THAT HAS TO BE GOVERNED
     public enum ProposalKind has drop, store {
-        Increment,
-        Set_value { value: u64 }
+        Transfer_funds { recipient: address, amount: u64 }
     }
     
     /// A governance proposal
@@ -187,18 +186,16 @@ module simple_counter_governance::governance {
         description: String,
         voting_period_seconds: u64,
         clock: &Clock,
-        proposal_kind: u8, // 0-1 for different proposal types
-        value_1: u64, // For set_value
+        proposal_kind: u8, // 0-0 for different proposal types
+        recipient_0: address, // For transfer_funds,
+        amount_0: u64, // For transfer_funds
         ctx: &mut TxContext,
     ) : ID {
         let pK: ProposalKind;
         // Create the appropriate proposal kind based on the proposal_kind parameter
         match (proposal_kind) {
             0 => {
-                pK = ProposalKind::Increment;
-            },
-            1 => {
-                pK = ProposalKind::Set_value { value: value_1 };
+                pK = ProposalKind::Transfer_funds { recipient: recipient_0, amount: amount_0 };
             },
             _ => {
                 abort EInvalidProposalKind
@@ -388,7 +385,7 @@ module simple_counter_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut simple_counter::Counter,
+        app_object: &mut Crowdfund::Campaign,
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -400,11 +397,8 @@ module simple_counter_governance::governance {
         
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
         match (&proposal.kind) {
-            ProposalKind::Increment => {
-                simple_counter::increment(app_object)
-            },
-            ProposalKind::Set_value { value } => {
-                simple_counter::set_value(app_object, *value)
+            ProposalKind::Transfer_funds { recipient, amount } => {
+                Crowdfund::transfer_funds(app_object, *recipient, *amount, ctx)
             }
         };
         

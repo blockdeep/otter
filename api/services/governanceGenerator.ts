@@ -353,7 +353,7 @@ module ${moduleInfo.packageName}_governance::governance {
     public entry fun execute_proposal(
         self: &mut GovernanceSystem,
         proposal_id: ID,
-        app_object: &mut ${moduleInfo.packageName}::${moduleInfo.moduleName}::${mainStruct},
+        app_object: &mut ${moduleInfo.packageName}::${mainStruct},
         ctx: &mut TxContext,
     ) {
         // Ensure proposal exists
@@ -524,24 +524,38 @@ function generateExecutionLogic(
                   );
                 });
 
+                // Determine which parameters to pass to the function
+                // For most functions, we just need app_object and additional params
+                const additionalParams =
+                  filteredParams.length > 0
+                    ? ", " +
+                      filteredParams.map((param) => `*${param.name}`).join(", ")
+                    : "";
+
+                // Check if the function needs context
+                const needsContext = action.parameters.some((param) =>
+                  param.type.toLowerCase().includes("txcontext")
+                );
+                const contextParam = needsContext ? ", ctx" : "";
+
                 if (filteredParams.length > 0) {
-                  const paramRefs = filteredParams
-                    .map((param) => param.name)
+                  const paramList = filteredParams
+                    .map((param) => `${param.name}`)
                     .join(", ");
                   return `ProposalKind::${capitalizeFirstLetter(
                     action.name
-                  )} { ${paramRefs} } => {
-                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${
+                  )} { ${paramList} } => {
+                ${moduleInfo.packageName}::${
                     action.name
-                  }(app_object, ${paramRefs}, ctx)
+                  }(app_object${additionalParams}${contextParam})
             }`;
                 } else {
                   return `ProposalKind::${capitalizeFirstLetter(
                     action.name
                   )} => {
-                ${moduleInfo.packageName}::${moduleInfo.moduleName}::${
+                ${moduleInfo.packageName}::${
                     action.name
-                  }(app_object, ctx)
+                  }(app_object${contextParam})
             }`;
                 }
               })
@@ -572,16 +586,16 @@ function generateProposalCreationLogic(
       ) {
         // Create unique parameter name by combining action index and param name
         const uniqueName = `${param.name}_${actionIndex}`;
-        allParams.set(uniqueName, `${param.type} // For ${action.name}`);
+        allParams.set(uniqueName, `${param.type}, // For ${action.name}`);
       }
     });
   });
 
+  // Add comma after the last parameter
   const parameterList = Array.from(allParams.entries())
     .map(([name, type]) => `${name}: ${type}`)
     .join(",\n        ");
 
-  // Modify the match statement to include commas after each case
   return `public entry fun create_proposal(
         self: &mut GovernanceSystem,
         governance_coins: &Coin<GOVTOKEN>,
@@ -613,13 +627,13 @@ function generateProposalCreationLogic(
                 });
 
                 if (filteredParams.length > 0) {
-                  const paramNames = filteredParams
-                    .map((param) => `${param.name}_${index}`)
+                  const paramAssignments = filteredParams
+                    .map((param) => `${param.name}: ${param.name}_${index}`)
                     .join(", ");
                   return `${index} => {
                 pK = ProposalKind::${capitalizeFirstLetter(
                   action.name
-                )} { ${paramNames} };
+                )} { ${paramAssignments} };
             },`; // Added comma here
                 } else {
                   return `${index} => {

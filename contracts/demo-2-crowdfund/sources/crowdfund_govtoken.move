@@ -1,8 +1,7 @@
-export function generateGovernanceTokenContract(moduleInfo: any): string {
-    return `// Copyright (c) Mysten Labs, Inc.
+// Copyright (c) Mysten Labs, Inc.
   // SPDX-License-Identifier: Apache-2.0
   
-  module ${moduleInfo.packageName}_governance::govtoken {
+  module crowdfund_governance::govtoken {
       use sui::balance::{Self, Balance};
       use sui::coin::{Self, Coin, TreasuryCap};
       use sui::sui::SUI;
@@ -221,5 +220,4 @@ export function generateGovernanceTokenContract(moduleInfo: any): string {
           let AdminCap { id } = cap;
           object::delete(id);
       }
-  }`;
   }

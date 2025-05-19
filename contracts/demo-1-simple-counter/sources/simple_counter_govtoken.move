@@ -5,12 +5,8 @@
       use sui::balance::{Self, Balance};
       use sui::coin::{Self, Coin, TreasuryCap};
       use sui::sui::SUI;
-      use sui::tx_context::{sender, TxContext};
-      use sui::object::{Self, UID};
-      use sui::transfer;
-      use sui::tx_context;
+      use sui::tx_context::{sender};
       use sui::event;
-      use std::option;
   
       /// Error constants
       const EInsufficientBalance: u64 = 1;

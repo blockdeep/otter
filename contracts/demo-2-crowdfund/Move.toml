@@ -1,0 +1,13 @@
+[package]
+name = "crowdfund_governance"
+edition = "2024.beta" 
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+crowdfund = { local = "./crowdfund" }
+
+
+[addresses]
+crowdfund_governance = "0x0"
+crowdfund = "0xfe96adf5992c6befb46385077360147bb1340bd2d361ca94da7fda703f21fafb"
+
