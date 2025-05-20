@@ -119,7 +119,7 @@ export default function LaunchGovernancePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 lg:items-center gap-4 mb-4">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-4 [&>div]:min-h-full items-center gap-4 mb-4">
                   {/* Step 1 with subtle border */}
                   <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all bg-white">
                     <div className="rounded-full bg-primary/10 p-3 text-primary">
@@ -177,7 +177,7 @@ export default function LaunchGovernancePage() {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full h-full grid-cols-2 sm:grid-cols-4 border border-gray-300 p-1 rounded-lg shadow-sm">
+              <TabsList className="grid w-full h-full grid-cols-2 sm:grid-cols-4 border border-gray-300 pt-2 px-1 pb-0 rounded-lg shadow-sm">
                 <TabsTrigger
                   value="upload"
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
@@ -730,7 +730,7 @@ export default function LaunchGovernancePage() {
                         <div className="space-y-6 mt-4">
                           <Accordion type="single" collapsible>
                             <AccordionItem value="item-1">
-                              <AccordionTrigger>
+                              <AccordionTrigger className="bg-primary-foreground px-4">
                                 <h4 className="font-bold text-primary">
                                   Scenario #1: Local reference
                                 </h4>
@@ -773,7 +773,7 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                               </AccordionContent>
                             </AccordionItem>
                             <AccordionItem value="item-2">
-                              <AccordionTrigger>
+                              <AccordionTrigger className="bg-primary-foreground px-4">
                                 <h4 className="font-bold text-primary">
                                   Scenario #2: Github reference
                                 </h4>
