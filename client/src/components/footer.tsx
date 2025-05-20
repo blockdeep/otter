@@ -1,4 +1,4 @@
-import { Github, Twitter } from "lucide-react";
+import { Github, X } from "lucide-react";
 import Logo from "@/public/logo.png";
 
 export function Footer() {
@@ -11,17 +11,14 @@ export function Footer() {
               <img
                 src={Logo}
                 alt="OTTER logo"
-                width={24}
-                height={24}
-                className="h-6 w-6"
+                width={100}
+                height={100}
+                className="h-30 w-30"
               />
-              <span className="text-xl font-bold text-card-foreground">
-                OTTER
-              </span>
+              <p className="text-sm text-muted-foreground">
+                Decentralized Governance for Sui
+              </p>
             </a>
-            <p className="text-sm text-muted-foreground">
-              Decentralized Governance for Sui
-            </p>
           </div>
           <div className="grid grid-cols-2 gap-8 md:col-span-2">
             <div className="flex flex-col gap-2">
@@ -29,19 +26,19 @@ export function Footer() {
                 Resources
               </h3>
               <a
-                href="#"
+                href="https://github.com/blockdeep/otter/blob/master/Readme.md"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Documentation
               </a>
               <a
-                href="#"
+                href="https://github.com/blockdeep/otter"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 GitHub
               </a>
               <a
-                href="#"
+                href="https://github.com/blockdeep/otter/blob/master/Deploy.md"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Tutorials
@@ -55,16 +52,10 @@ export function Footer() {
                 href="#"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Twitter
+                X (formerly Twitter)
               </a>
               <a
-                href="#"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                Discord
-              </a>
-              <a
-                href="#"
+                href="mailto:info@blockdeep.io"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Contact
@@ -81,11 +72,11 @@ export function Footer() {
               href="#"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              <Twitter className="h-5 w-5" />
+              <X className="h-5 w-5" />
               <span className="sr-only">Twitter</span>
             </a>
             <a
-              href="#"
+              href="https://github.com/blockdeep/otter"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               <Github className="h-5 w-5" />
