@@ -38,13 +38,13 @@ export function Navbar() {
             Governance
           </a>
           <a
-            href="#"
+            href="https://github.com/blockdeep/otter"
             className="text-sm font-medium text-foreground hover:text-primary transition-colors"
           >
             Docs
           </a>
           <a
-            href="#"
+            href="/about"
             className="text-sm font-medium text-foreground hover:text-primary transition-colors"
           >
             About

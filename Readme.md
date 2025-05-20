@@ -60,7 +60,6 @@ Due to the limitations of dynamic dispatch on Sui, onboarding is manual for now.
 ### ✅ MVP
 - [x] Launch Governance frontend
 - [x] Generic smart contract for plug and play
-- [x] Generic smart contract for plug and play
 - [x] Walrus integration for proposal description storage and refunds
 - [x] Frontend UI for proposal creation and voting
 

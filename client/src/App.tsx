@@ -186,7 +186,7 @@ export default function Home() {
         </section>
 
         {/* Partner dApps */}
-        <section className="py-12 md:py-24 bg-secondary/50">
+        {/* <section className="py-12 md:py-24 bg-secondary/50">
           <div className="container px-4 md:px-6 mx-auto">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -199,7 +199,7 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap justify-center gap-8 mt-8">
                 {/* Placeholder for partner logos */}
-                <div className="h-16 w-32 rounded-md bg-card shadow-sm flex items-center justify-center text-muted-foreground border border-border">
+                {/* <div className="h-16 w-32 rounded-md bg-card shadow-sm flex items-center justify-center text-muted-foreground border border-border">
                   Partner 1
                 </div>
                 <div className="h-16 w-32 rounded-md bg-card shadow-sm flex items-center justify-center text-muted-foreground border border-border">
@@ -214,7 +214,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */} 
       </main>
       <Footer />
     </div>

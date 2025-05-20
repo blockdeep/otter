@@ -16,11 +16,16 @@ import ProposalDetailsPage from "./governance/[app]/proposals/[proposalId]/page.
 import LaunchGovernancePage from "./governance/launch/page.js";
 import CreateProposalPage from "./governance/[app]/proposals/create/page.js";
 import WhiteListGovernancePage from "./governance/whitelist/page.js";
+import About from "./About.js";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+  },
+  {
+    path: "/about",
+    element: <About />,
   },
   {
     path: "/governance",
