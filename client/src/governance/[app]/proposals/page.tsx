@@ -1,8 +1,7 @@
-import { ArrowLeft, Clock, PlusIcon } from "lucide-react";
-import { useParams, useNavigate, Outlet } from "react-router";
+import { ArrowLeft, ArrowRight, Clock, PlusIcon } from "lucide-react";
+import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/footer";
@@ -151,7 +150,7 @@ export default function ProposalsPage() {
           <div className="container px-4 md:px-6 mx-auto">
             <div className="mb-8">
               <Button
-                variant="ghost"
+                variant="outline"
                 className="mb-4 text-foreground hover:text-primary"
                 onClick={handleBack}
               >
@@ -161,16 +160,16 @@ export default function ProposalsPage() {
               <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl"></h1>
               <div className="flex justify-between">
                 <p className="mt-2 text-muted-foreground md:text-xl">
-                  View and vote on governance proposals for{" "}
-                  {appName.substring(0, 8)} ...{" "}
-                  {appName.substring(appName.length - 8)}
+                  <span className="text-primary font-semibold">
+                    View and vote on governance proposals for{" "}
+                  </span>
+                  <span className="text-base">
+                    {appName.substring(0, 8)} ...{" "}
+                    {appName.substring(appName.length - 8)}
+                  </span>
                 </p>
 
-                <Button
-                  variant="outline"
-                  className="mb-4 text-foreground hover:text-primary"
-                  onClick={handleCreateProposal}
-                >
+                <Button className="mb-4" onClick={handleCreateProposal}>
                   <PlusIcon className="mr-2 h-4 w-4" />
                   Create proposal
                 </Button>
@@ -203,10 +202,11 @@ export default function ProposalsPage() {
                       </div>
                       <div className="mt-4 flex justify-end">
                         <Button
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground border border-zinc-300"
+                          variant="secondary"
                           onClick={() => handleViewDetails(proposal.objectId)}
                         >
                           View Details
+                          <ArrowRight className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>

@@ -3,7 +3,12 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  @apply bg-background text-foreground;
 }
 
 @layer utilities {
@@ -34,16 +39,16 @@ body {
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 220 45% 40%;
-    
+
     /* Chart colors - solid colors */
     --chart-1: 220 70% 50%;
     --chart-2: 190 60% 45%;
     --chart-3: 160 55% 47%;
     --chart-4: 130 45% 50%;
     --chart-5: 100 60% 50%;
-    
+
     --radius: 0.4rem;
-    
+
     /* Sidebar */
     --sidebar-background: 210 40% 96%;
     --sidebar-foreground: 220 25% 10%;
@@ -76,14 +81,14 @@ body {
     --border: 215 25% 18%;
     --input: 215 25% 18%;
     --ring: 217 85% 60%;
-    
+
     /* Chart colors - solid colors */
     --chart-1: 217 85% 60%;
     --chart-2: 190 75% 55%;
     --chart-3: 160 70% 45%;
     --chart-4: 130 65% 50%;
     --chart-5: 280 75% 60%;
-    
+
     /* Sidebar */
     --sidebar-background: 215 30% 13%;
     --sidebar-foreground: 210 15% 92%;

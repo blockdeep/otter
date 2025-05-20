@@ -38,6 +38,7 @@ export function Navbar() {
             Governance
           </a>
           <a
+            target="_blank"
             href="https://github.com/blockdeep/otter"
             className="text-sm font-medium text-foreground hover:text-primary transition-colors"
           >
@@ -51,14 +52,11 @@ export function Navbar() {
           </a>
         </nav>
 
-        <div className="hidden lg:flex gap-6 ml-2 justify-end">
-          <Button
-            asChild
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
+        <div className="hidden lg:flex gap-6 ml-6 justify-end">
+          <Button asChild variant="secondary">
             <a href="/governance/launch">Launch Governance</a>
           </Button>
-          <ConnectButton className="whitespace-nowrap" />
+          <ConnectButton className="whitespace-nowrap !bg-primary !hover:bg-primary/90 !text-primary-foreground" />
         </div>
 
         <Button

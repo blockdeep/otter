@@ -180,7 +180,7 @@ export default function LaunchGovernancePage() {
               <TabsList className="grid w-full h-full grid-cols-2 sm:grid-cols-4 border border-gray-300 pt-2 px-1 pb-0 rounded-lg shadow-sm">
                 <TabsTrigger
                   value="upload"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
                   1.Upload Contract
                 </TabsTrigger>
@@ -189,21 +189,21 @@ export default function LaunchGovernancePage() {
                   disabled={
                     detectedActions.length === 0 || inputMethod === "package"
                   }
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
                   2.Select Functions
                 </TabsTrigger>
                 <TabsTrigger
                   value="review"
                   disabled={!result}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
                   3.Review Integration
                 </TabsTrigger>
                 <TabsTrigger
                   value="deploy"
                   disabled={!result}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
                   4.Deploy Governance
                 </TabsTrigger>
@@ -735,7 +735,7 @@ export default function LaunchGovernancePage() {
                                   Scenario #1: Local reference
                                 </h4>
                               </AccordionTrigger>
-                              <AccordionContent>
+                              <AccordionContent className="px-4">
                                   <p className="my-2">
                               Your folder structure should look something like
                               this:
@@ -778,7 +778,7 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                                   Scenario #2: Github reference
                                 </h4>
                               </AccordionTrigger>
-                              <AccordionContent>
+                              <AccordionContent className="px-4">
                                 <p className="my-2">
                               Your folder structure should look something like
                               this:
