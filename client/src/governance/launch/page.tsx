@@ -1022,33 +1022,47 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+                  <CardFooter className="flex flex-col gap-4 lg:flex-row lg:justify-between">
                     <Button
                       variant="outline"
-                      className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
+                      className="w-full lg:w-auto shadow-sm hover:shadow transition-all"
                       onClick={() => setActiveTab("review")}
                     >
                       Go Back
                     </Button>
                     <Button
                       variant="secondary"
-                      className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
+                      className="w-full lg:w-auto shadow-sm hover:shadow transition-all"
                       onClick={downloadGovernanceContracts}
                     >
                       Download Contracts
                     </Button>
-                    <Button
-                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
-                      onClick={() =>
-                        window.open(
-                          "https://docs.otter.gov/deploy-guide",
-                          "_blank",
-                        )
-                      }
-                    >
-                      View Full Documentation{" "}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <div className="flex w-full lg:w-auto flex-row-reverse items-center gap-4">
+                      <Button
+                        className="w-full lg:w-auto"
+                        onClick={() =>
+                          window.open(
+                            "/governance/whitelist",
+                            "_blank",
+                          )
+                        }
+                        >
+                        Whitelist governance
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant='secondary'
+                        className="w-full lg:w-auto"
+                        onClick={() =>
+                          window.open(
+                            "https://docs.otter.gov/deploy-guide",
+                            "_blank",
+                          )
+                        }
+                        >
+                        View Full Documentation
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               </TabsContent>
