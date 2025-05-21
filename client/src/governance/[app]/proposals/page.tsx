@@ -24,6 +24,7 @@ interface Proposal {
 }
 
 // Status mapping
+// @ts-ignore
 const statusToText = {
   0: "active",
   1: "passed",
@@ -31,6 +32,7 @@ const statusToText = {
 };
 
 // Badge color helper
+// @ts-ignore
 const getStatusBadgeColor = (status: string) => {
   switch (status) {
     case "active":
