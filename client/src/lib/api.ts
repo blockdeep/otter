@@ -2,9 +2,7 @@
  * API service for fetching governance data
  */
 
-
-// TODO: Create a config file to read all env variables and import from that file
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+import { API_BASE_URL } from "@/config";
 
 
 // TODO: Move types to a seperate file types.ts

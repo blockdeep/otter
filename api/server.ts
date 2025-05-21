@@ -16,13 +16,13 @@ import contractProcessorRouter from "./routes/contractProcessor";
 import { SuiRPC } from "./utils/RPC";
 import { refreshTrackers } from "./indexer/event-indexer";
 
-const PORT = process.env.PORT || 50000;
+const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(cors());
 
 app.use(express.json());
 
-app.use("/api", contractProcessorRouter);
+app.use("/contract", contractProcessorRouter);
 
 app.get("/", async (req, res) => {
   res.send({ message: "🚀 API is functional 🚀" });
@@ -150,5 +150,8 @@ app.post("/whitelist-governance", async (req, res) => {
     });
   }
 });
+
+console.log("starting server");
+
 
 app.listen(PORT, () => console.log(`🚀 Server ready at: ${PORT}`));

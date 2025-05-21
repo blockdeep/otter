@@ -4,6 +4,7 @@
 	"private": true,
 	"description": "Demo package for escrow",
 	"main": "server.ts",
+	"packageManager": "pnpm@8.15.4",
 	"scripts": {
 		"dev": "concurrently \"pnpm api:dev\" \"pnpm indexer\"",
 		"db:setup:dev": "npx prisma migrate dev --name init",
@@ -11,7 +12,9 @@
 		"db:studio": "npx prisma studio",
 		"api:dev": "npx ts-node server.ts",
 		"indexer": "npx ts-node indexer.ts",
-		"reset": "npx prisma db push --force-reset && npx prisma migrate dev --name init"
+		"reset": "npx prisma db push --force-reset && npx prisma migrate dev --name init",
+		"build": "tsc",
+		"start": "concurrently \"node dist/server.js\" \"node dist/indexer.js\""
 	},
 	"keywords": [],
 	"author": "",

@@ -124,22 +124,20 @@ pnpm indexer
 ```
 
 
+## RUN DOCKER CONTAINER: API SERVICE
+
+1. Run this command to build the image.
 ```bash
-SERVER_URL="http://localhost:5000"
+docker build -t api-prod .
+```
 
-# Define the parameters
-PASSWORD="roxxx"  # Replace with the password from your .env file
-ADDRESS="0x78f3c755b1d906864e4721dc887e59127553149a6f066acb45f6e37524925186"           # Replace with the governance address
-PROJECT_NAME="Simple Governance"                # Replace with the project name
-DETAILS="Decentralized governance platform for Sui ecosystem projects"  # Replace with details
+2. To start the container run
+```bash
+docker run -d -p 3000:3000 --name api api-prod
+```
 
-# Make the curl request
-curl -X POST "${SERVER_URL}/whitelist-governance" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"password\": \"${PASSWORD}\", 
-    \"address\": \"${ADDRESS}\", 
-    \"projectName\": \"${PROJECT_NAME}\", 
-    \"details\": \"${DETAILS}\"
-  }"
+3. To stop the container run
+
+```bash
+docker stop api
 ```

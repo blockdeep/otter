@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
+import { API_BASE_URL } from "@/config";
 
 // Types
 interface Proposal {
@@ -76,16 +77,12 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // TODO: Import it from config file
-  const API_URL =
-    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
-
   // TODO: Always avoid using fetching inside useEffect. Use TanStack.
   useEffect(() => {
     const fetchProposals = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/proposals`);
+        const response = await fetch(`${API_BASE_URL}/proposals`);
         if (!response.ok)
           throw new Error(`Failed to fetch proposals: ${response.statusText}`);
         const result = await response.json();
@@ -102,7 +99,7 @@ export default function ProposalsPage() {
     };
 
     if (app) fetchProposals();
-  }, [API_URL, app]);
+  }, [API_BASE_URL, app]);
 
   const handleBack = () => {
     navigate("/governance");

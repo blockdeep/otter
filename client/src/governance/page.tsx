@@ -11,6 +11,7 @@ import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/config";
 
 // Interface for governance data
 interface GovernanceApp {
@@ -39,18 +40,13 @@ export default function GovernancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // TODO: Import it from config file
-  // API base URL - update this to match your server
-  const API_URL =
-    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
-
   // TODO: Move to TanStack query
   useEffect(() => {
     const fetchGovernanceApps = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch(`${API_URL}/governances?active=true`);
+        const response = await fetch(`${API_BASE_URL}/governances?active=true`);
         if (!response.ok) {
           throw new Error(
             `Error fetching governance data: ${response.statusText}`,
@@ -70,7 +66,7 @@ export default function GovernancePage() {
       }
     };
     fetchGovernanceApps();
-  }, [API_URL]);
+  }, [API_BASE_URL]);
 
   const handleViewProposals = (address: string) => {
     // Navigate to the proposals page with the app ID

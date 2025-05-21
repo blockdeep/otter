@@ -41,7 +41,7 @@ class SuiRPC {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       if (data.jsonrpc !== "2.0") {
         throw new Error("Invalid JSON-RPC response");
       }
@@ -55,7 +55,7 @@ class SuiRPC {
 
   async getGovernanceInfo(packageId: string) {
     try {
-      const modules = await this.getNormalizedMoveModulesByPackage(packageId);
+      const modules = await this.getNormalizedMoveModulesByPackage(packageId) as Record<string, any>;
 
       // Search through all modules for one that has "create_proposal" in exposedFunctions
       for (const [moduleName, moduleData] of Object.entries(modules)) {
