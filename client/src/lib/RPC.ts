@@ -1,3 +1,7 @@
+// TODO: Need a lot of refactoring
+// 1. Move types/interfaces to seperate file
+// 2. Looks like it's a closely tight logic, whole logic can be wrapped inside a Provider and exported via custom hook.
+
 interface SuiRpcResponse {
   jsonrpc: string;
   id: number;

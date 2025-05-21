@@ -36,16 +36,14 @@ export default function CreateProposalPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const API_URL =
-    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
-
+  // TODO: Some states could be binded together. Rather, using TanStack Query and React hook form would be optimal here in order to make code maintainable and much readable.
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [votingPeriodSeconds, setVotingPeriodSeconds] = useState("259200"); // Default 3 days
   const [proposalKind, setProposalKind] = useState<string>("");
   const [governanceSystemId, setGovernanceSystemId] = useState("");
   const [govTokenId, setGovTokenId] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, _setSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -59,11 +57,7 @@ export default function CreateProposalPage() {
 
   // SUI WORK
   const suiClient = useSuiClient();
-  const {
-    mutate: signAndExecute,
-    isSuccess,
-    isPending,
-  } = useSignAndExecuteTransaction();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 
   useEffect(() => {
     const fetchGovernanceInfo = async () => {
@@ -185,27 +179,29 @@ export default function CreateProposalPage() {
     ).indexOf(proposalKind);
 
     const uploadResponse = await Walrus.uploadText(description, {
-      epochs: 2,      // Store for 2 epochs
-      deletable: true // Make the blob deletable
+      epochs: 2, // Store for 2 epochs
+      deletable: true, // Make the blob deletable
     });
-    
+
     if (!uploadResponse.newlyCreated && !uploadResponse.alreadyCertified) {
-      throw new Error('Upload failed: No blob information returned');
+      throw new Error("Upload failed: No blob information returned");
     }
-    
+
     // Determine if this is a new blob or an already existing one
     const isNewBlob = !!uploadResponse.newlyCreated;
-    
+
     // Get the blob ID
-    const blobId = isNewBlob 
-      ? uploadResponse.newlyCreated?.blobObject.blobId 
+    const blobId = isNewBlob
+      ? uploadResponse.newlyCreated?.blobObject.blobId
       : uploadResponse.alreadyCertified?.blobId;
-    
+
     if (!blobId) {
-      throw new Error('Failed to get blob ID from response');
+      throw new Error("Failed to get blob ID from response");
     }
-    
-    console.log(`\nUpload ${isNewBlob ? 'completed (new blob)' : 'found existing blob'}`);
+
+    console.log(
+      `\nUpload ${isNewBlob ? "completed (new blob)" : "found existing blob"}`,
+    );
     console.log(`Blob ID: ${blobId}`);
 
     // Prepare arguments for the transaction based on the function signature
@@ -294,6 +290,7 @@ export default function CreateProposalPage() {
 
   const appName = app || "Project";
 
+  // TODO: Move Loading to a seperate loading component
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">

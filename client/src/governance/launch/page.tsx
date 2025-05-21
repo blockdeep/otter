@@ -27,7 +27,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useContractProcessor from "@/hooks/useContractProcessor";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+// TODO: Need a lot of refactoring
+// 1. As it's a multistep form, all steps can be moved to it's seperate component
+// 2. This file should behave as a single source of truth for the form
+// 3. Avoid using useEffect, use TanStack Query instead
 export default function LaunchGovernancePage() {
   const {
     contractCode,
@@ -117,7 +123,7 @@ export default function LaunchGovernancePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-4 [&>div]:min-h-full items-center gap-4 mb-4">
                   {/* Step 1 with subtle border */}
                   <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all bg-white">
                     <div className="rounded-full bg-primary/10 p-3 text-primary">
@@ -175,35 +181,35 @@ export default function LaunchGovernancePage() {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-4 border border-gray-300 p-1 rounded-lg shadow-sm">
+              <TabsList className="grid w-full h-full grid-cols-2 sm:grid-cols-4 border border-gray-300 pt-2 px-1 pb-0 rounded-lg shadow-sm">
                 <TabsTrigger
                   value="upload"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
-                  Upload Contract
+                  1.Upload Contract
                 </TabsTrigger>
                 <TabsTrigger
                   value="select"
                   disabled={
                     detectedActions.length === 0 || inputMethod === "package"
                   }
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
-                  Select Functions
+                  2.Select Functions
                 </TabsTrigger>
                 <TabsTrigger
                   value="review"
                   disabled={!result}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
-                  Review Integration
+                  3.Review Integration
                 </TabsTrigger>
                 <TabsTrigger
                   value="deploy"
                   disabled={!result}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
+                  className="data-[state=active]:border-b-2 pb-3 data-[state=active]:border-primary data-[state=active]:bg-secondary/20 font-medium transition-all"
                 >
-                  Deploy Governance
+                  4.Deploy Governance
                 </TabsTrigger>
               </TabsList>
 
@@ -726,27 +732,34 @@ export default function LaunchGovernancePage() {
                         </p>
 
                         <div className="space-y-6 mt-4">
-                          <div>
-                            <h4 className="font-bold text-primary">
-                              Scenario #1: Local reference
-                            </h4>
-                            <p className="my-2">
+                          <Accordion type="single" collapsible>
+                            <AccordionItem value="item-1">
+                              <AccordionTrigger className="bg-primary-foreground px-4">
+                                <h4 className="font-bold text-primary">
+                                  Scenario #1: Local reference
+                                </h4>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-4">
+                                  <p className="my-2">
                               Your folder structure should look something like
                               this:
                             </p>
                             <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
-                              <pre>{`governance/
+                              <ScrollArea aria-orientation="horizontal" className="h-full w-full"><pre>
+                                {`governance/
 ├── app_folder/                 # App smart contract folder
 ├── sources/                    
 │   ├── governance.move         # governance contract downloaded from OTTER.
 │   └── governance_token.move   # governnace token contract downloaded at the same time.
 ├── tests
 └── Move.toml`}</pre>
+<ScrollBar orientation="horizontal" />
+</ScrollArea>
                             </div>
 
                             <p className="my-2">And the Move.toml like this:</p>
                             <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
-                              <pre>{`[package]
+                              <ScrollArea aria-orientation="horizontal" className="h-full w-full"><pre>{`[package]
 name = "generic_governor"
 edition = "2024.beta" 
 
@@ -758,42 +771,54 @@ simple_counter = { local = "./simple_counter" }
 [addresses]
 generic_governor = "0x0"
 simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"`}</pre>
+<ScrollBar orientation="horizontal" />
+</ScrollArea>
                             </div>
-                          </div>
-
-                          <div>
-                            <h4 className="font-bold text-primary">
-                              Scenario #2: Github reference
-                            </h4>
-                            <p className="my-2">
+                              </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-2">
+                              <AccordionTrigger className="bg-primary-foreground px-4">
+                                <h4 className="font-bold text-primary">
+                                  Scenario #2: Github reference
+                                </h4>
+                              </AccordionTrigger>
+                              <AccordionContent className="px-4">
+                                <p className="my-2">
                               Your folder structure should look something like
                               this:
                             </p>
                             <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
-                              <pre>{`governance/
+                             <ScrollArea aria-orientation="horizontal" className="h-full w-full"><pre>{`governance/
 ├── sources/                    
 │   ├── governance.move         # governance contract downloaded from OTTER.
 │   └── governance_token.move   # governnace token contract downloaded at the same time.
 ├── tests
 └── Move.toml`}</pre>
+<ScrollBar orientation="horizontal" />
+</ScrollArea>
                             </div>
 
                             <p className="my-2">And the Move.toml like this:</p>
-                            <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
-                              <pre>{`[package]
-name = "generic_governor"
-edition = "2024.beta" 
+                                <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
+                                <ScrollArea aria-orientation="horizontal" className="h-full w-full"><pre>{`[package]
+    name = "generic_governor"
+    edition = "2024.beta" 
 
-[dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
-simple_counter = { git = "https://github.com/<username>/<repo>.git", subdir = "<path-to-package>", rev = "<commit-or-branch>" }
+    [dependencies]
+    Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+    simple_counter = { git = "https://github.com/<username>/<repo>.git", subdir = "<path-to-package>", rev = "<commit-or-branch>" }
 
 
-[addresses]
-generic_governor = "0x0"
-simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"`}</pre>
+    [addresses]
+    generic_governor = "0x0"
+    simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"`}
+                            </pre>
+                            <ScrollBar orientation="horizontal" />
+                            </ScrollArea>
                             </div>
-                          </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
                         </div>
                       </div>
 
@@ -997,33 +1022,47 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+                  <CardFooter className="flex flex-col gap-4 lg:flex-row lg:justify-between">
                     <Button
                       variant="outline"
-                      className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
+                      className="w-full lg:w-auto shadow-sm hover:shadow transition-all"
                       onClick={() => setActiveTab("review")}
                     >
                       Go Back
                     </Button>
                     <Button
                       variant="secondary"
-                      className="w-full sm:w-auto shadow-sm hover:shadow transition-all"
+                      className="w-full lg:w-auto shadow-sm hover:shadow transition-all"
                       onClick={downloadGovernanceContracts}
                     >
                       Download Contracts
                     </Button>
-                    <Button
-                      className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
-                      onClick={() =>
-                        window.open(
-                          "https://docs.otter.gov/deploy-guide",
-                          "_blank",
-                        )
-                      }
-                    >
-                      View Full Documentation{" "}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <div className="flex w-full lg:w-auto flex-row-reverse items-center gap-4">
+                      <Button
+                        className="w-full lg:w-auto"
+                        onClick={() =>
+                          window.open(
+                            "/governance/whitelist",
+                            "_blank",
+                          )
+                        }
+                        >
+                        Whitelist governance
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant='secondary'
+                        className="w-full lg:w-auto"
+                        onClick={() =>
+                          window.open(
+                            "https://docs.otter.gov/deploy-guide",
+                            "_blank",
+                          )
+                        }
+                        >
+                        View Full Documentation
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               </TabsContent>

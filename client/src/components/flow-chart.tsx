@@ -9,6 +9,7 @@ import ReactFlow, {
   MiniMap,
   Handle,
   Position,
+  Edge,
 } from "reactflow";
 import {
   Upload,
@@ -21,7 +22,20 @@ import {
 } from "lucide-react";
 
 // Custom node component
-const CustomNode = ({ data }) => {
+type CustomNodeData = {
+  label: string;
+  type: string;
+  icon?: React.ElementType;
+  description?: string;
+  route?: string;
+};
+
+type CustomNodeProps = {
+  data: CustomNodeData;
+};
+
+// Custom node component
+const CustomNode = ({ data }: CustomNodeProps) => {
   const { label, type, icon: Icon, description, route } = data;
 
   const handleClick = () => {
@@ -202,11 +216,12 @@ const GovernanceFlowChart = () => {
     { id: "e9", source: "proposals", target: "vote", type: "smoothstep", markerEnd: { type: MarkerType.ArrowClosed } },
   ];
 
+  // @ts-ignore
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
-    (params) => {
+    (params: ConcatArray<Edge<any>>) => {
       setEdges((eds) => eds.concat(params));
     },
     [setEdges]
@@ -232,6 +247,7 @@ const GovernanceFlowChart = () => {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            // @ts-ignore
             onConnect={onConnect}
             nodeTypes={nodeTypes}
             connectionLineType={ConnectionLineType.SmoothStep}

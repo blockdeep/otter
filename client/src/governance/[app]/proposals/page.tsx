@@ -1,8 +1,7 @@
-import { ArrowLeft, Clock, PlusIcon } from "lucide-react";
-import { useParams, useNavigate, Outlet } from "react-router";
+import { ArrowLeft, ArrowRight, Clock, PlusIcon } from "lucide-react";
+import { useParams, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/footer";
@@ -25,6 +24,8 @@ interface Proposal {
 }
 
 // Status mapping
+// TODO: Not being used, could be removed
+// @ts-ignore
 const statusToText = {
   0: "active",
   1: "passed",
@@ -32,6 +33,8 @@ const statusToText = {
 };
 
 // Badge color helper
+// TODO: Not being used, could be removed
+// @ts-ignore
 const getStatusBadgeColor = (status: string) => {
   switch (status) {
     case "active":
@@ -68,12 +71,16 @@ export default function ProposalsPage() {
   const navigate = useNavigate();
 
   const [proposals, setProposals] = useState<Proposal[]>([]);
+
+  // TODO: Make use of TanStack query to avoid creating manual loading, error, success states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // TODO: Import it from config file
   const API_URL =
     import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
 
+  // TODO: Always avoid using fetching inside useEffect. Use TanStack.
   useEffect(() => {
     const fetchProposals = async () => {
       try {
@@ -111,6 +118,7 @@ export default function ProposalsPage() {
 
   const appName = app || "Project";
 
+  // TODO: Move to seperate component
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -123,6 +131,7 @@ export default function ProposalsPage() {
     );
   }
 
+  // TODO: Move to seperate component
   if (error) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -151,7 +160,7 @@ export default function ProposalsPage() {
           <div className="container px-4 md:px-6 mx-auto">
             <div className="mb-8">
               <Button
-                variant="ghost"
+                variant="outline"
                 className="mb-4 text-foreground hover:text-primary"
                 onClick={handleBack}
               >
@@ -161,16 +170,16 @@ export default function ProposalsPage() {
               <h1 className="text-3xl font-bold tracking-tighter text-foreground sm:text-4xl md:text-5xl"></h1>
               <div className="flex justify-between">
                 <p className="mt-2 text-muted-foreground md:text-xl">
-                  View and vote on governance proposals for{" "}
-                  {appName.substring(0, 8)} ...{" "}
-                  {appName.substring(appName.length - 8)}
+                  <span className="text-primary font-semibold">
+                    View and vote on governance proposals for{" "}
+                  </span>
+                  <span className="text-base">
+                    {appName.substring(0, 8)} ...{" "}
+                    {appName.substring(appName.length - 8)}
+                  </span>
                 </p>
 
-                <Button
-                  variant="outline"
-                  className="mb-4 text-foreground hover:text-primary"
-                  onClick={handleCreateProposal}
-                >
+                <Button className="mb-4" onClick={handleCreateProposal}>
                   <PlusIcon className="mr-2 h-4 w-4" />
                   Create proposal
                 </Button>
@@ -203,10 +212,11 @@ export default function ProposalsPage() {
                       </div>
                       <div className="mt-4 flex justify-end">
                         <Button
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground border border-zinc-300"
+                          variant="secondary"
                           onClick={() => handleViewDetails(proposal.objectId)}
                         >
                           View Details
+                          <ArrowRight className="h-4 w-4" />
                         </Button>
                       </div>
                     </CardContent>

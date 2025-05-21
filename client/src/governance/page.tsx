@@ -33,14 +33,18 @@ interface ApiResponse {
 
 export default function GovernancePage() {
   const navigate = useNavigate();
+
+  // TODO: Move to TanStack query
   const [governanceApps, setGovernanceApps] = useState<GovernanceApp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // TODO: Import it from config file
   // API base URL - update this to match your server
   const API_URL =
     import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
 
+  // TODO: Move to TanStack query
   useEffect(() => {
     const fetchGovernanceApps = async () => {
       try {
@@ -79,6 +83,7 @@ export default function GovernancePage() {
   };
 
   // Show loading state
+  // TODO: Move to seperate component
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -97,6 +102,7 @@ export default function GovernancePage() {
   }
 
   // Show error state
+  // TODO: Move to seperate component
   if (error) {
     return (
       <div className="flex min-h-screen flex-col bg-background">

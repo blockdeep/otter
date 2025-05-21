@@ -110,6 +110,7 @@ const truncateText = (text: string, maxLength: number) => {
   return text.substring(0, maxLength) + "...";
 };
 
+// TODO: Code need to be refactored. Move code to seperate components.
 export default function ProposalDetailsPage() {
   const { app, proposalId } = useParams();
   const navigate = useNavigate();
@@ -560,7 +561,6 @@ export default function ProposalDetailsPage() {
   const percent = (v: number) => Math.round((v / totalVotes) * 100);
   const formattedEndTime = formatDate(Number(proposal.votingEndsAt));
   const proposalState = getProposalState();
-  console.log(proposalState);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -601,45 +601,45 @@ export default function ProposalDetailsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-col sm:flex-row gap-6">
-                  <div className="flex items-center">
-                    <Calendar className="mr-2 h-5 w-5 text-primary" />
-                    <div>
+                <div className="flex flex-col sm:flex-row gap-12">
+                  <div className="flex items-start flex-col">
+                    <div className="flex items-center">
+                      <Calendar className="mr-2 h-5 w-5 text-primary" />
                       <p className="text-sm text-muted-foreground">End Time</p>
-                      <p className="font-medium text-card-foreground">
-                        {formattedEndTime}
-                      </p>
                     </div>
+                    <p className="font-medium text-card-foreground">
+                      {formattedEndTime}
+                    </p>
                   </div>
-                  <div className="flex items-center">
-                    <Clock className="mr-2 h-5 w-5 text-primary" />
-                    <div>
+                  <div className="flex flex-col items-start">
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-5 w-5 text-primary" />
                       <p className="text-sm text-muted-foreground">Threshold</p>
-                      <p className="font-medium text-card-foreground">
-                        {Number(proposal.threshold).toLocaleString()}
-                      </p>
                     </div>
+                    <p className="font-medium text-card-foreground">
+                      {Number(proposal.threshold).toLocaleString()}
+                    </p>
                   </div>
                   {proposal.description && (
-                    <div className="flex items-center">
-                      <ExternalLink className="mr-2 h-5 w-5 text-primary" />
-                      <div>
+                    <div className="flex flex-col items-start">
+                      <div className="flex items-center">
+                        <ExternalLink className="mr-2 h-5 w-5 text-primary" />
                         <p className="text-sm text-muted-foreground">
                           Description Blob ID
                         </p>
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs font-mono text-card-foreground bg-muted px-2 py-1 rounded">
-                            {truncateText(proposal.description, 20)}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyBlobId(proposal.description!)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <code className="text-xs font-mono text-card-foreground bg-muted px-2 py-1 rounded">
+                          {truncateText(proposal.description, 20)}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyBlobId(proposal.description!)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   )}
