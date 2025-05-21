@@ -1,5 +1,11 @@
 import { useState } from "react";
 
+// TODO: Need a lot of refactoring
+// 1. Move types/interfaces to seperate file
+// 2. Move all fetching logics to TanStack and export required stuff
+// 3. Remove all redundant states like loading, error etc.
+// 4. Actual fetching logic can be moved to a Factory class, and TanStack query wrappers could be used inorder to code maintainability and readability.
+
 /**
  * Parameter information for governable functions
  */

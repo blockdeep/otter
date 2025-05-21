@@ -16,10 +16,13 @@ export default function WhiteListGovernancePage() {
     projectName: "",
     details: "",
   });
+
+  // TODO: Easily managable with TanStack Query
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // TODO: Import it from config
   // API base URL - update this to match your server
   const API_URL =
     import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
@@ -34,6 +37,7 @@ export default function WhiteListGovernancePage() {
     }));
   };
 
+  // TODO: Use `zod` or `yup` alogn with react-hook-form for managable validations
   const validateForm = () => {
     // Simple validation of required fields
     if (!formData.address.trim()) {
@@ -59,6 +63,7 @@ export default function WhiteListGovernancePage() {
     return true;
   };
 
+  // TODO: Whole logic can be moved to TanStack mutations
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

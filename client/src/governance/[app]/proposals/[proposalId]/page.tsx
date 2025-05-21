@@ -110,6 +110,7 @@ const truncateText = (text: string, maxLength: number) => {
   return text.substring(0, maxLength) + "...";
 };
 
+// TODO: Code need to be refactored. Move code to seperate components.
 export default function ProposalDetailsPage() {
   const { app, proposalId } = useParams();
   const navigate = useNavigate();

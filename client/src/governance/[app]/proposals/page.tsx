@@ -24,6 +24,7 @@ interface Proposal {
 }
 
 // Status mapping
+// TODO: Not being used, could be removed
 // @ts-ignore
 const statusToText = {
   0: "active",
@@ -32,6 +33,7 @@ const statusToText = {
 };
 
 // Badge color helper
+// TODO: Not being used, could be removed
 // @ts-ignore
 const getStatusBadgeColor = (status: string) => {
   switch (status) {
@@ -69,12 +71,16 @@ export default function ProposalsPage() {
   const navigate = useNavigate();
 
   const [proposals, setProposals] = useState<Proposal[]>([]);
+
+  // TODO: Make use of TanStack query to avoid creating manual loading, error, success states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // TODO: Import it from config file
   const API_URL =
     import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
 
+  // TODO: Always avoid using fetching inside useEffect. Use TanStack.
   useEffect(() => {
     const fetchProposals = async () => {
       try {
@@ -112,6 +118,7 @@ export default function ProposalsPage() {
 
   const appName = app || "Project";
 
+  // TODO: Move to seperate component
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
@@ -124,6 +131,7 @@ export default function ProposalsPage() {
     );
   }
 
+  // TODO: Move to seperate component
   if (error) {
     return (
       <div className="flex min-h-screen flex-col bg-background">

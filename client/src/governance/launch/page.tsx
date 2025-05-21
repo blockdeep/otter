@@ -30,6 +30,10 @@ import useContractProcessor from "@/hooks/useContractProcessor";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
+// TODO: Need a lot of refactoring
+// 1. As it's a multistep form, all steps can be moved to it's seperate component
+// 2. This file should behave as a single source of truth for the form
+// 3. Avoid using useEffect, use TanStack Query instead
 export default function LaunchGovernancePage() {
   const {
     contractCode,

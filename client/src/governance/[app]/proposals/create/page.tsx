@@ -36,6 +36,7 @@ export default function CreateProposalPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // TODO: Some states could be binded together. Rather, using TanStack Query and React hook form would be optimal here in order to make code maintainable and much readable.
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [votingPeriodSeconds, setVotingPeriodSeconds] = useState("259200"); // Default 3 days
@@ -289,6 +290,7 @@ export default function CreateProposalPage() {
 
   const appName = app || "Project";
 
+  // TODO: Move Loading to a seperate loading component
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
