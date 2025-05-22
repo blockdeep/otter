@@ -93,7 +93,7 @@ export class SuiRPC {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: SuiRpcResponse = await response.json();
+      const data: SuiRpcResponse = await response.json() as SuiRpcResponse;
 
       if (data.jsonrpc !== "2.0") {
         throw new Error("Invalid JSON-RPC response");

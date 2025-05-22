@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Check } from "lucide-react";
 import { useNavigate } from "react-router";
+import { API_BASE_URL } from "@/config";
 
 export default function WhiteListGovernancePage() {
   const navigate = useNavigate();
@@ -21,11 +22,6 @@ export default function WhiteListGovernancePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  // TODO: Import it from config
-  // API base URL - update this to match your server
-  const API_URL =
-    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -75,7 +71,7 @@ export default function WhiteListGovernancePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/whitelist-governance`, {
+      const response = await fetch(`${API_BASE_URL}/whitelist-governance`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

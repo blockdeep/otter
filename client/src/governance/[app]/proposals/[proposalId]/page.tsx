@@ -29,6 +29,7 @@ import { getGovernanceInfo } from "@/lib/RPC";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Walrus, { blobToString } from "@/lib/Walrus";
+import { API_BASE_URL } from "@/config";
 
 interface Proposal {
   id: number;
@@ -137,9 +138,6 @@ export default function ProposalDetailsPage() {
   const [descriptionLoading, setDescriptionLoading] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
 
-  const API_URL =
-    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000";
-
   // SUI hooks
   const suiClient = useSuiClient();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
@@ -189,7 +187,7 @@ export default function ProposalDetailsPage() {
     const fetchProposal = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/proposals?objectId=${proposalId}`);
+        const res = await fetch(`${API_BASE_URL}/proposals?objectId=${proposalId}`);
         if (!res.ok)
           throw new Error(`Failed to load proposal: ${res.statusText}`);
         const data = await res.json();
@@ -336,7 +334,7 @@ export default function ProposalDetailsPage() {
           setGovTokenId("");
           // Refresh proposal data
           const res = await fetch(
-            `${API_URL}/proposals?objectId=${proposalId}`,
+            `${API_BASE_URL}/proposals?objectId=${proposalId}`,
           );
           if (res.ok) {
             const data = await res.json();
@@ -412,7 +410,7 @@ export default function ProposalDetailsPage() {
           setGovernanceSystemId("");
           // Refresh proposal data
           const res = await fetch(
-            `${API_URL}/proposals?objectId=${proposalId}`,
+            `${API_BASE_URL}/proposals?objectId=${proposalId}`,
           );
           if (res.ok) {
             const data = await res.json();
@@ -493,7 +491,7 @@ export default function ProposalDetailsPage() {
           setCounterObjectId("");
           // Refresh proposal data
           const res = await fetch(
-            `${API_URL}/proposals?objectId=${proposalId}`,
+            `${API_BASE_URL}/proposals?objectId=${proposalId}`,
           );
           if (res.ok) {
             const data = await res.json();

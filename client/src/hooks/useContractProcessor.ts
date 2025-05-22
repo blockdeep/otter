@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/config";
 import { useState } from "react";
 
 // TODO: Need a lot of refactoring
@@ -69,10 +70,6 @@ export function useContractProcessor() {
   const [result, setResult] = useState<ProcessingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // API base URL - update this to match your server
-  const API_URL =
-    import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:50000/api";
-
   /**
    * Handle contract code input change
    */
@@ -139,7 +136,7 @@ export function useContractProcessor() {
           ? { contractCode }
           : { packageId, rpcUrl: rpcUrl || undefined };
 
-      const response = await fetch(`${API_URL}/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/contract/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -247,7 +244,7 @@ export function useContractProcessor() {
         selectedActions.includes(action.name),
       );
 
-      const response = await fetch(`${API_URL}/generate-governance`, {
+      const response = await fetch(`${API_BASE_URL}/contract/generate-governance`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

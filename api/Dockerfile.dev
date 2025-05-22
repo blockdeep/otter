@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install OS dependencies for Prisma (SQLite or binary engines)
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+COPY . .
+
+ENV CI=true
+RUN pnpm install --frozen-lockfile
+
+
+# Optional: Run initial setup (you can comment this out in compose instead)
+# RUN pnpm db:setup:dev
+
+EXPOSE 3000
+
+CMD ["pnpm", "dev"]
