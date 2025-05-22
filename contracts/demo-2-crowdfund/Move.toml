@@ -9,5 +9,5 @@ crowdfund = { local = "./crowdfund" }
 
 [addresses]
 crowdfund_governance = "0x0"
-crowdfund = "0xfe96adf5992c6befb46385077360147bb1340bd2d361ca94da7fda703f21fafb"
+crowdfund = "0x702d5dc64600d9a4ee253c5ceaf9025923b60339e742181d4e645f2cbef63f04"
 

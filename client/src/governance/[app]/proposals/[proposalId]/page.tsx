@@ -25,7 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-import { getGovernanceInfo } from "@/lib/RPC";
+import { getGovernanceInfo, suiRPC } from "@/lib/RPC";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Walrus, { blobToString } from "@/lib/Walrus";
@@ -51,6 +51,11 @@ interface GovernanceInfo {
   governanceModuleName: string;
   createProposalFunction: any;
   proposalKindEnum: any;
+}
+
+interface ExecuteProposalInfo {
+  executeProposalFunction: any;
+  additionalParameters: any[];
 }
 
 const formatDate = (ms: number) => {
@@ -105,6 +110,26 @@ const getStatusLabel = (status: number) => {
   }
 };
 
+const formatParameterType = (parameter: any): string => {
+  if (typeof parameter === "string") {
+    return parameter;
+  }
+
+  if (parameter.Struct) {
+    return `${parameter.Struct.name}`;
+  }
+
+  if (parameter.Reference && parameter.Reference.Struct) {
+    return `&${parameter.Reference.Struct.name}`;
+  }
+
+  if (parameter.MutableReference && parameter.MutableReference.Struct) {
+    return `&mut ${parameter.MutableReference.Struct.name}`;
+  }
+
+  return JSON.stringify(parameter);
+};
+
 // Utility function to truncate text with ellipsis
 const truncateText = (text: string, maxLength: number) => {
   if (text.length <= maxLength) return text;
@@ -124,7 +149,6 @@ export default function ProposalDetailsPage() {
   const [executing, setExecuting] = useState(false);
   const [governanceSystemId, setGovernanceSystemId] = useState("");
   const [govTokenId, setGovTokenId] = useState("");
-  const [counterObjectId, setCounterObjectId] = useState("");
   const [showVoteInputs, setShowVoteInputs] = useState(false);
   const [showFinalizeInputs, setShowFinalizeInputs] = useState(false);
   const [showExecuteInputs, setShowExecuteInputs] = useState(false);
@@ -132,6 +156,11 @@ export default function ProposalDetailsPage() {
   const [governanceInfo, setGovernanceInfo] = useState<GovernanceInfo | null>(
     null,
   );
+  const [executeProposalInfo, setExecuteProposalInfo] =
+    useState<ExecuteProposalInfo | null>(null);
+  const [executeAdditionalArgs, setExecuteAdditionalArgs] = useState<
+    Record<string, string>
+  >({});
 
   // Walrus description states
   const [descriptionContent, setDescriptionContent] = useState<string>("");
@@ -183,11 +212,24 @@ export default function ProposalDetailsPage() {
     }
   };
 
+  const getExecuteProposalParameters = () => {
+    if (!executeProposalInfo?.executeProposalFunction?.parameters) return [];
+
+    // Skip the first 2 parameters and the last (TxContext)
+    // 0: &mut GovernanceSystem (handled by governanceSystemId)
+    // 1: proposal_id: ID (handled by proposalId)
+    // 2+: additional parameters (dynamic based on contract)
+    const params = executeProposalInfo.executeProposalFunction.parameters;
+    return params.slice(2, params.length - 1);
+  };
+
   useEffect(() => {
     const fetchProposal = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/proposals?objectId=${proposalId}`);
+        const res = await fetch(
+          `${API_BASE_URL}/proposals?objectId=${proposalId}`,
+        );
         if (!res.ok)
           throw new Error(`Failed to load proposal: ${res.statusText}`);
         const data = await res.json();
@@ -218,9 +260,40 @@ export default function ProposalDetailsPage() {
       }
     };
 
+    const fetchExecuteProposalInfo = async () => {
+      if (!app) return;
+      try {
+        const modules = await suiRPC.getNormalizedMoveModulesByPackage(app);
+
+        // Find the module with execute_proposal function
+        for (const [_, moduleData] of Object.entries(modules)) {
+          if (
+            moduleData.exposedFunctions &&
+            moduleData.exposedFunctions.execute_proposal
+          ) {
+            const executeFunction =
+              moduleData.exposedFunctions.execute_proposal;
+            const additionalParams = executeFunction.parameters.slice(
+              2,
+              executeFunction.parameters.length - 1,
+            );
+
+            setExecuteProposalInfo({
+              executeProposalFunction: executeFunction,
+              additionalParameters: additionalParams,
+            });
+            break;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching execute proposal info:", error);
+      }
+    };
+
     if (proposalId) {
       fetchProposal();
       fetchGovernanceInfo();
+      fetchExecuteProposalInfo();
     }
   }, [proposalId, app]);
 
@@ -441,27 +514,63 @@ export default function ProposalDetailsPage() {
       setError("Governance information not loaded");
       return;
     }
+
+    if (!executeProposalInfo) {
+      setError("Execute proposal information not loaded");
+      return;
+    }
+
     if (!governanceSystemId) {
       setError("Governance System ID is required");
       return;
     }
-    if (!counterObjectId) {
-      setError("Counter Object ID is required for execution");
-      return;
-    }
+
     if (!proposalId) {
       setError("Proposal ID is required");
       return;
     }
 
+    // Check if all additional parameters are provided
+    const additionalParams = getExecuteProposalParameters();
+    for (let i = 0; i < additionalParams.length; i++) {
+      if (!executeAdditionalArgs[`executeArg${i}`]) {
+        setError(
+          `Parameter ${i + 1} (${formatParameterType(additionalParams[i])}) is required`,
+        );
+        return;
+      }
+    }
+
     setExecuting(true);
     const tx = new Transaction();
 
-    const args = [
+    // Build arguments dynamically
+    const args: any[] = [
       tx.object(governanceSystemId), // &mut GovernanceSystem
       tx.object(proposalId), // proposal_id: ID
-      tx.object(counterObjectId), // &mut Counter (specific to the contract being governed)
     ];
+
+    // Add additional parameters dynamically
+    additionalParams.forEach((param: any, index: number) => {
+      const value = executeAdditionalArgs[`executeArg${index}`];
+      if (value) {
+        // Parse the value based on parameter type
+        if (formatParameterType(param).includes("u64")) {
+          args.push(tx.pure.u64(parseInt(value)));
+        } else if (formatParameterType(param).includes("u32")) {
+          args.push(tx.pure.u32(parseInt(value)));
+        } else if (formatParameterType(param).includes("u8")) {
+          args.push(tx.pure.u8(parseInt(value)));
+        } else if (formatParameterType(param).includes("String")) {
+          args.push(tx.pure.string(value));
+        } else if (formatParameterType(param).includes("bool")) {
+          args.push(tx.pure.bool(value === "true"));
+        } else {
+          // For object references (most common case)
+          args.push(tx.object(value));
+        }
+      }
+    });
 
     tx.moveCall({
       arguments: args,
@@ -485,10 +594,12 @@ export default function ProposalDetailsPage() {
             title: "Proposal Executed",
             description: "The proposal has been successfully executed!",
           });
+
           // Reset execute inputs
           setShowExecuteInputs(false);
           setGovernanceSystemId("");
-          setCounterObjectId("");
+          setExecuteAdditionalArgs({});
+
           // Refresh proposal data
           const res = await fetch(
             `${API_BASE_URL}/proposals?objectId=${proposalId}`,
@@ -878,25 +989,52 @@ export default function ProposalDetailsPage() {
                             required
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="counterObjectId">
-                            Counter Object ID
-                          </Label>
-                          <Input
-                            id="counterObjectId"
-                            placeholder="Enter the counter object ID that this proposal will modify (0x...)"
-                            value={counterObjectId}
-                            onChange={(e) => setCounterObjectId(e.target.value)}
-                            required
-                          />
-                        </div>
+
+                        {/* Dynamic additional parameters for execute_proposal */}
+                        {getExecuteProposalParameters().length > 0 && (
+                          <>
+                            <h4 className="font-medium text-card-foreground mt-4">
+                              Additional Parameters Required
+                            </h4>
+                            {getExecuteProposalParameters().map(
+                              (param: any, index: number) => (
+                                <div key={index} className="space-y-2">
+                                  <Label htmlFor={`executeArg${index}`}>
+                                    {formatParameterType(param)}
+                                  </Label>
+                                  <Input
+                                    id={`executeArg${index}`}
+                                    placeholder={`Enter ${formatParameterType(param)} object ID (0x...)`}
+                                    value={
+                                      executeAdditionalArgs[
+                                        `executeArg${index}`
+                                      ] || ""
+                                    }
+                                    onChange={(e) =>
+                                      setExecuteAdditionalArgs((prev) => ({
+                                        ...prev,
+                                        [`executeArg${index}`]: e.target.value,
+                                      }))
+                                    }
+                                    required
+                                  />
+                                </div>
+                              ),
+                            )}
+                          </>
+                        )}
+
                         <div className="flex gap-4">
                           <Button
                             onClick={handleExecuteProposal}
                             disabled={
                               executing ||
                               !governanceSystemId ||
-                              !counterObjectId
+                              // Check if all additional args are provided
+                              getExecuteProposalParameters().some(
+                                (_: string, index: number) =>
+                                  !executeAdditionalArgs[`executeArg${index}`],
+                              )
                             }
                             className="bg-green-600 hover:bg-green-700 text-white"
                           >
@@ -907,7 +1045,7 @@ export default function ProposalDetailsPage() {
                             onClick={() => {
                               setShowExecuteInputs(false);
                               setGovernanceSystemId("");
-                              setCounterObjectId("");
+                              setExecuteAdditionalArgs({});
                               setError(null);
                             }}
                           >

@@ -1,76 +1,77 @@
 #  OTTER — Decentralized Governance on Sui
 
-Welcome to **OTTER**, the governance framework built for the Sui blockchain.  
+Welcome to **OTTER**, the governance framework built in SUI blockchain for SUI ecosystem.  
 OTTER makes it easy for any Sui-based dApp to launch, manage, and scale decentralized governance — no complex setup required.
 
 ---
 
-## 🌊 Why OTTER?
+## 🌊 WHY OTTER?
 
 In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. OTTER fills that gap by offering:
 
 - A plug-and-play governance layer for any Sui dApp.
 - Frictionless on-chain voting with real-time feedback.
 - Walrus-based storage refunds for proposal cost optimization.
-- A single interface to govern across the entire Sui ecosystem.
+- A single unified interface to govern across the entire Sui ecosystem.
 
 ---
 
-## 🔧 Core Features
+## 🔧 CORE FEATURES
 
 - **Unified Governance Hub**: Discover and participate in proposals across all onboarded dApps.
 - **Create & Vote on Proposals**: Easily launch proposals, cast votes (Yes/No/Abstain), and track results.
 - **On-Chain Execution**: Execute governance-approved smart contract actions directly.
+- **Access Control Support**: Make sure Governance approved functions are targetted only.
 - **Storage Refunds via Walrus**: Failed proposals allow proposers to reclaim their storage cost.
 - **Custom Governance Models**: Projects can configure quorum, voting thresholds, and execution logic.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 WEBSITE MAP
 
 
-### Frontend
+### GOVERNANCE DASHBOARD (/governance)
 - A governance dashboard to:
-  - View all dApp governance.
-  - Create and manage proposals.
+  - View all dApp governances whitelisted.
+  - Create and manage proposals for a governance.
   - Vote and track proposal outcomes.
 
-~~### Manual Onboarding (MVP Phase)
-Due to the limitations of dynamic dispatch on Sui, onboarding is manual for now.~~
-
-
-### LAUNCH GOVERNANCE 
- - In the short while of the hackathon we've managed to build a contract creator for app contracts.
+### LAUNCH GOVERNANCE (governance/launch)
+ - In the short while of the hackathon we've managed to build a contract generator for app contracts.
  - Create your own governance contract with three easy steps:
     1. Upload your App contract (in move language).
     2. Choose the functions you want to include in the governance contract.
     3. That's it! Our backend will create a governance contract for you which you can download and deploy!.
 
-  - For steps on how to deploy the governance contract follow this [guide](./Deploy)  
+  - For steps on how to deploy the governance contract follow this [guide](./docs/Deploy)  
 
 
-### NEXTSTEP?
+### WHITELIST GOVERNANCE (governance/whitelist)
+
+- Use the deployed packageId to whitelist your governance and our indexer will start tracking everything for you.
 
 
 ---
 
 
-## 📅 Roadmap
+## 📅 PRODUCT ROADMAP
 
 ### ✅ MVP
 - [x] Launch Governance frontend
-- [x] Generic smart contract for plug and play
+- [x] Generic smart contract for quick setup
 - [x] Walrus integration for proposal description storage and refunds
-- [x] Frontend UI for proposal creation and voting
+- [x] Frontend UI for proposal creation, voting, and execution
+- [x] Whitelisting feature for indexer.
 
 
 ### 🔜 Next
-- [ ]  Automatic deployment using OTTERs backend.
+- [ ]  Automatic deployment.
+- [ ] Walrus site to give sub-domain to each Governance
 ---
 
 ## 📘 Contract Compatibility
 
-Check out the docs for [governance compatibitility](./Compatibility).
+Check out the docs for [governance compatibitility](./docs/Compatibility).
 
 ---
 
@@ -78,21 +79,19 @@ Check out the docs for [governance compatibitility](./Compatibility).
 
 - **Sui Move** – On-chain governance contracts
 - **Walrus** – Programmable storage for refunds
-- **Next.js + Tailwind** – Frontend UI
+- **Vitejs+ Tailwind** – Frontend UI
 - **Typescript + Indexers** – Proposal & vote indexing
 
 ---
 
 ## 🤝 Contributing
 
-We're currently focused on onboarding real projects manually.  
 If you're interested in contributing or getting involved, feel free to open an issue or contact us!
 
 ---
 
 <!-- ## 📬 Contact
 
-- **Twitter**: [@yourhandle](https://twitter.com/)
 - **Email**: info@blockdeep.io
 - **Project Site**: [OTTER.xyz](https://otter.xyz) -->
 
