@@ -1,12 +1,12 @@
-# 🔄 OTTER Compatibility Guide
+# 🔄 Otter Compatibility Guide
 
-This document explains how to ensure your dApp is **compatible** with the OTTER governance framework. OTTER provides a governance layer that integrates tightly with both smart contracts and the frontend UI. To support real-time updates and seamless on-chain governance execution, certain **events and function definitions** are expected to follow a loosely enforced structure.
+This document explains how to ensure your dApp is **compatible** with the Otter governance framework. Otter provides a governance layer that integrates tightly with both smart contracts and the frontend UI. To support real-time updates and seamless on-chain governance execution, certain **events and function definitions** are expected to follow a loosely enforced structure.
 
 ---
 
 ## 📡 How It Works
 
-- An **indexer** monitors the Sui blockchain for **specific governance events** emitted by contracts using OTTER.
+- An **indexer** monitors the Sui blockchain for **specific governance events** emitted by contracts using Otter.
 - The **UI layer** (governance dashboard) responds to these events and expects specific function names and parameter formats to drive workflows like proposal creation, voting, finalization, and execution.
 
 > ⚠️ You can modify or extend these interfaces slightly, but significant deviations may require frontend reconfiguration.
@@ -15,7 +15,7 @@ This document explains how to ensure your dApp is **compatible** with the OTTER 
 
 ## 🧩 Required Events
 
-Your governance contract must emit the following events to ensure compatibility with OTTER's indexer:
+Your governance contract must emit the following events to ensure compatibility with Otter's indexer:
 
 ### 1. `ProposalCreated`
 
@@ -77,7 +77,7 @@ event::emit(ProposalExecuted {
 
 ## ⚙️ Function Compatibility Guidelines
 
-To ensure the governance contract works with OTTER, the following **entry functions** are expected, with reasonable structure:
+To ensure the governance contract works with Otter, the following **entry functions** are expected, with reasonable structure:
 
 ---
 
@@ -193,8 +193,8 @@ public enum ProposalKind has drop, store {
 
 ---
 
-For any deviation or advanced customization, please coordinate with the OTTER team to ensure compatibility with the frontend and indexer.
+For any deviation or advanced customization, please coordinate with the Otter team to ensure compatibility with the frontend and indexer.
 
 ---
 
-Made with 🐋 by the OTTER team — bringing decentralized governance to the Sui ecosystem.
+Made with 🐋 by the Otter team — bringing decentralized governance to the Sui ecosystem.
