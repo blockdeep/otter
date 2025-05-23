@@ -1,4 +1,6 @@
-## For the purpose of demo we'll go from using an APP contract, deploying governance for it and creating, voting, and executing a proposal on it.
+# Otter Demo Guide
+
+For the purpose of demo we'll go from using an APP contract, deploying governance for it and creating, voting, and executing a proposal on it.
 
 1. Ensure your app contract is deployed. For the demo we are using [Crowdfund contract](../contracts/crowdfund/).
 
@@ -58,7 +60,5 @@
     export GOV_TOKEN_ID=0x00bbead282f954a96b0eb9a541e0ceb284fb0a3fb40da1aa1a33e564f146255d
     ```
 
-### At this point your governance is setup and we can shift to the UI for proposal creation, voting and so on.
-
-### Once on the UI, use the whitelist governance page to whitelist and describe your governance system.
+At this point your governance is setup and we can shift to the UI for proposal creation and voting. Once on the UI, use the whitelist governance page to whitelist and describe your governance system.
 
