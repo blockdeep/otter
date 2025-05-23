@@ -1,25 +1,25 @@
-# 🧾 OTTER Pitch Deck (Markdown Edition)
+# 🧾 Otter Pitch (Markdown Edition)
 
 > **If you're here to judge the product, read on.**  
 > Otherwise, head to the [main README](./README.md) for setup, usage, and integration details.
 
 ---
 
-## 🐋 What Is OTTER?
+## 🐋 What Is Otter?
 
-**OTTER** is a plug-and-play **governance framework for the Sui blockchain**.  
+**Otter** is a plug-and-play **governance framework for the Sui blockchain**.  
 It empowers any Sui-based dApp to **launch, manage, and scale decentralized governance** — without needing deep Move expertise or weeks of dev time.
 
-Governance shouldn’t be an afterthought. OTTER makes it effortless.
+Governance shouldn’t be an afterthought. Otter makes it effortless.
 
 ---
 
-## 🌊 Why OTTER?
+## 🌊 Why Otter?
 
 Sui is fast, scalable, and expressive — but governance is still a missing piece.  
 There’s no **native standard** for proposals, voting, or execution.
 
-OTTER solves this:
+Otter solves this:
 
 - ✅ Provides a reusable governance contract suite (written in Move)
 - ✅ Handles proposal creation, voting, and on-chain execution
@@ -31,7 +31,7 @@ OTTER solves this:
 
 ## 🧰 How It Works
 
-At its core, OTTER offers:
+At its core, Otter offers:
 
 ### 🎛️ 1. **Governance System Object**
 A smart contract that manages:
@@ -46,7 +46,7 @@ A flexible enum (`ProposalKind`) that lets projects define what governance contr
 - Real-world usage: Treasury transfers, configuration updates, etc.
 
 ### 📡 3. **Indexable Events**
-OTTER emits structured events like:
+Otter emits structured events like:
 - `ProposalCreated`
 - `VoteCast`
 - `ProposalStatusChanged`
@@ -56,7 +56,7 @@ These allow the frontend to respond instantly and enable indexers to sync govern
 
 ---
 
-## 💡 What Makes OTTER Different?
+## 💡 What Makes Otter Different?
 
 - **Generalized**: Works for any Sui dApp with minimal adaptation
 - **Composable**: Supports different proposal logic for different contracts
@@ -77,7 +77,7 @@ These allow the frontend to respond instantly and enable indexers to sync govern
 
 <!-- ## 💸 Sustainable Model
 
-OTTER is designed to be modular and monetizable:
+Otter is designed to be modular and monetizable:
 - Setup fee for projects launching governance
 - Optional subscription for analytics/API access
 - Gas rebates on proposal execution
@@ -97,10 +97,10 @@ OTTER is designed to be modular and monetizable:
 
 **Governance is infrastructure.** And like bridges and roads, it needs to be dependable, extensible, and scalable.
 
-OTTER delivers that for Sui.
+Otter delivers that for Sui.
 
 Let the whales govern. 🐋
 
 ---
 
-Made with 🧠 and 🐋 by the OTTER team.
+Made with 🧠 and 🐋 by the Otter team.
