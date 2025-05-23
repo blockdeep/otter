@@ -1,13 +1,13 @@
-#  OTTER — Decentralized Governance on Sui
+#  Otter — Decentralized Governance on Sui
 
-Welcome to **OTTER**, the governance framework built in SUI blockchain for SUI ecosystem.  
-OTTER makes it easy for any Sui-based dApp to launch, manage, and scale decentralized governance — no complex setup required.
+Welcome to **Otter**, the governance framework built on Sui blockchain for the Sui ecosystem.  
+Otter makes it easy for any Sui-based dApp to launch, manage, and scale decentralized governance — no complex setup required.
 
 ---
 
-## 🌊 WHY OTTER?
+## 🌊 WHY Otter?
 
-In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. OTTER fills that gap by offering:
+In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. Otter fills that gap by offering:
 
 - A plug-and-play governance layer for any Sui dApp.
 - Frictionless on-chain voting with real-time feedback.
@@ -27,32 +27,28 @@ In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. O
 
 ---
 
-## 🚀 WEBSITE MAP
+## 🚀 APP STRUCTURE
 
 
 ### GOVERNANCE DASHBOARD (/governance)
 - A governance dashboard to:
-  - View all dApp governances whitelisted.
-  - Create and manage proposals for a governance.
+  - View all whitelisted dApp governance instances.
+  - Create and manage proposals for a governance instance.
   - Vote and track proposal outcomes.
 
-### LAUNCH GOVERNANCE (governance/launch)
- - In the short while of the hackathon we've managed to build a contract generator for app contracts.
- - Create your own governance contract with three easy steps:
+### LAUNCH GOVERNANCE (/governance/launch)
+ - As an MVP for the hackathon we've managed to build a contract generator for enabling governance in dApp contracts.
+ - Generate your own governance contract with three easy steps:
     1. Upload your App contract (in move language).
     2. Choose the functions you want to include in the governance contract.
-    3. That's it! Our backend will create a governance contract for you which you can download and deploy!.
-
+    3. That's it! Our backend will generate a governance contract which you can download and deploy!.
   - For steps on how to deploy the governance contract follow this [guide](./docs/Deploy)  
 
-
-### WHITELIST GOVERNANCE (governance/whitelist)
+### WHITELIST GOVERNANCE (/governance/whitelist)
 
 - Use the deployed packageId to whitelist your governance and our indexer will start tracking everything for you.
 
-
 ---
-
 
 ## 📅 PRODUCT ROADMAP
 
@@ -64,8 +60,8 @@ In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. O
 - [x] Whitelisting feature for indexer.
 
 
-### 🔜 Next
-- [ ]  Automatic deployment.
+### 🔜 Next Iteration
+- [ ] Automatic deployment.
 - [ ] Walrus site to give sub-domain to each Governance
 ---
 
@@ -90,10 +86,9 @@ If you're interested in contributing or getting involved, feel free to open an i
 
 ---
 
-<!-- ## 📬 Contact
+## 📬 Contact
 
 - **Email**: info@blockdeep.io
-- **Project Site**: [OTTER.xyz](https://otter.xyz) -->
 
 ---
 
