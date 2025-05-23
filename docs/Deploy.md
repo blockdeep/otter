@@ -1,6 +1,6 @@
-# 🛠 Deploying OTTER Governance on SUI using SUI CLI
+# 🛠 Deploying Otter Governance on Sui using Sui CLI
 
-This guide walks you through deploying and simulating a governance flow using OTTER on the Sui blockchain.
+This guide walks you through deploying and simulating a governance flow using Otter on the Sui blockchain.
 
 > ✅ Prerequisite: You must have `sui client` installed and configured (testnet).
 
@@ -10,9 +10,9 @@ This guide walks you through deploying and simulating a governance flow using OT
 
 #### There are two ways that allows app to refer to deployed packages - github or locally.
 
-#### P.S: Notice how simple_counter is being referred to through Move.toml.
+#### PS: Notice how simple_counter is being referred to through Move.toml.
 
-### Scenario #1: locally
+### Code Reference for Move - Scenario #1: Local
 
 1. Your folder structure should look something like this.
 
@@ -20,7 +20,7 @@ This guide walks you through deploying and simulating a governance flow using OT
    governance/
    ├── app_folder/                 # App smart contract folder
    ├── sources/
-   │   ├── governance.move         # governance contract downloaded from OTTER.
+   │   ├── governance.move         # governance contract downloaded from Otter.
    │   └── governance_token.move   # governnace token contract downloaded at the same time.
    ├── tests
    └── Move.toml
@@ -43,14 +43,14 @@ This guide walks you through deploying and simulating a governance flow using OT
    simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd"  ## Make sure to add the deployed address of the app contract
    ```
 
-### Scenario #2: Github
+### Code Reference for Move - Scenario #2: Github
 
 1. Your folder structure should look something like this.
 
    ```bash
    governance/
    ├── sources/
-   │   ├── governance.move         # governance contract downloaded from OTTER.
+   │   ├── governance.move         # governance contract downloaded from Otter.
    │   └── governance_token.move   # governnace token contract downloaded at the same time.
    ├── tests
    └── Move.toml
@@ -73,7 +73,7 @@ This guide walks you through deploying and simulating a governance flow using OT
    simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e63330cd" ## Make sure to add the deployed address of the app contract
    ```
 
-### Moving on to deployment
+### Deployment
 
 1. To deploy the governance package
 
@@ -121,9 +121,9 @@ This guide walks you through deploying and simulating a governance flow using OT
    export GOV_TOKEN_ID=0x9777bb0fdb3a4181966abc7a7b2d1a3d54b06109a21edc20f3122b172d3bfc74
    ```
 
-### That's it! Your Governance Package is deployed which contains the governance contract with the token contract.
+**That's it! Your Governance Package is deployed which contains the governance contract with the token contract.**
 
-### Read further to understand the steps to create a proposal, vote on it and so on.
+### Steps to create a proposal and vote
 
 1. Create a Proposal (Increment)
 
@@ -165,4 +165,4 @@ This guide walks you through deploying and simulating a governance flow using OT
 
 ### Too many steps right?
 
-All of this can be done on the UI itself! Not sure how? Checkout this video!
+All of this can be done on the UI itself! Not sure how? Checkout the demo video!
