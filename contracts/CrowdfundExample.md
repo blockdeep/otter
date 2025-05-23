@@ -22,7 +22,8 @@ The contract contains two main structs:
 ## Functionality
 
 ```bash
- export packageId=0x71e1235d26fe3b0ef855a404bfe0c5783a2329499f9efd1df2eadd4729a94f3d
+ export packageId=0x702d5dc64600d9a4ee253c5ceaf9025923b60339e742181d4e645f2cbef63f04
+ export CROWDFUND_GOVERNANCE_CAP=0x25fc7c2033cb5f5bece125a825a8f660b0fb67232c31d54b8a118b3ce7ae2e41 
 ```
 
 ### Creating a Campaign
@@ -39,7 +40,7 @@ sui client call \
   --package $packageId \
   --module Crowdfund \
   --function create_campaign \
-  --args 100000000 1746696260 10000000 1000000 \
+  --args 100000000 1747940949 10000000 1000000 \
   --gas-budget 10000000
 ```
 
@@ -50,6 +51,7 @@ Donate SUI tokens to a campaign:
 ```bash
 # Get a coin object to use for donation
 export coinObjectId=$(sui client gas --json | jq -r '.[0].gasCoinId')
+export campaignId=0x7c262fed4b2475409f2c59eb178ef77028a14af5e253890c86b39f1f84e7a146
 
 # Make the donation
 sui client call \
@@ -89,22 +91,6 @@ sui client call \
   --module Crowdfund \
   --function transfer_funds \
   --args $campaignId $recipientAddress 500000000 $governanceCapId \
-  --gas-budget 10000000
-```
-
-#### Transfer Governance Capability
-
-The governance capability can be transferred to a new address:
-
-```bash
-
-export governanceCapId=0x101443ed5cbd885944f2abd52a5f86b2eefdba859bd2159c65e03ace0114c8b6
-
-sui client call \
-  --package $packageId \
-  --module Crowdfund \
-  --function transfer_governance \
-  --args $governanceCapId $newGovernorAddress \
   --gas-budget 10000000
 ```
 

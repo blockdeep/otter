@@ -53,7 +53,7 @@ export function generateGovernanceContract(
 // SPDX-License-Identifier: Apache-2.0
 
 module ${moduleInfo.packageName}_governance::governance {
-    use std::string::{Self, String};
+    use std::string::{String};
     use sui::table::{Self, Table};
     use sui::tx_context::{sender};
     use sui::vec_map::{Self, VecMap};
@@ -66,6 +66,9 @@ module ${moduleInfo.packageName}_governance::governance {
     
     // Import the app module being governed
     use ${moduleInfo.packageName}::${moduleInfo.moduleName};
+
+    // Import the app module being governed AND its capability
+    use ${moduleInfo.packageName}::${moduleInfo.moduleName}::{GovernanceCapability};
     
     /// Error constants
     const EInsufficientVotingPower: u64 = 1;
@@ -107,6 +110,7 @@ module ${moduleInfo.packageName}_governance::governance {
         admin: address,
         /// Total token supply for quorum calculation
         total_token_supply: u64,
+        governance_capability: GovernanceCapability,
     }
     
     /// Capability for administration
@@ -186,25 +190,31 @@ module ${moduleInfo.packageName}_governance::governance {
     }
     
     // === Initialize the governance system ===
-    fun init(ctx: &mut TxContext) {
+    public entry fun initialize_governance(
+        governance_cap: GovernanceCapability, // ← Receive capability
+        ctx: &mut TxContext,
+    ) {
         // Create admin capability
         let admin_cap = GovernanceAdminCap {
             id: object::new(ctx),
         };
         
-        // Create and share the GovernanceSystem
-        transfer::share_object(GovernanceSystem {
+        // Create and share the GovernanceSystem WITH capability
+        let governance_system = GovernanceSystem {
             id: object::new(ctx),
             proposals: table::new(ctx),
             next_proposal_id: 0,
             admin: sender(ctx),
-            total_token_supply: 0, // Will be updated by admin
-        });
+            total_token_supply: 0,
+            governance_capability: governance_cap, // ← Store immediately
+        };
+        
+        transfer::share_object(governance_system);
         
         // Transfer admin cap to sender
         transfer::transfer(admin_cap, sender(ctx));
     }
-    
+
     // === Administration functions ===
     
     /// Update the total token supply (for quorum calculations)
@@ -369,22 +379,7 @@ module ${moduleInfo.packageName}_governance::governance {
     
     /// Execute a proposal's action based on its kind
     ${executeProposalFunction}
-    
-    /// Helper to create a unique key for dynamic fields
-    fun combine_key(id: ID, key: String): vector<u8> {
-        let mut result = object::id_to_bytes(&id);
-        let key_bytes = *string::as_bytes(&key);
         
-        let mut i = 0;
-        let len = vector::length(&key_bytes);
-        while (i < len) {
-            vector::push_back(&mut result, *vector::borrow(&key_bytes, i));
-            i = i + 1;
-        };
-        
-        result
-    }
-    
     // === Getters ===
     
     /// Get the status of a proposal
@@ -462,7 +457,9 @@ function generateProposalKindEnum(
     .map((action) => {
       // Get non-main object parameters
       const relevantParams = action.parameters.filter((param) => {
-        const type = param.type.toLowerCase();
+        if (!param.type) return false;
+
+        const type = param.type?.toLowerCase();
         // Filter out main object parameters and common system parameters
         return (
           !type.includes("txcontext") &&
@@ -499,6 +496,9 @@ function generateExecuteProposalFunction(
   exactModuleName: string,
   mainStruct: string
 ): string {
+  // Check if any action uses GovernanceCapability
+  const hasGovernanceCapability = usesGovernanceCapability(governableActions);
+
   // Create a set to track already added types to prevent duplicates
   const addedTypeSignatures = new Set<string>();
   const additionalObjectParams: AdditionalParamInfo[] = [];
@@ -508,8 +508,10 @@ function generateExecuteProposalFunction(
     action.parameters.forEach((param) => {
       // Skip common parameters like TxContext and Clock
       if (
+        !param.type ||
         param.type.toLowerCase().includes("txcontext") ||
-        param.type.toLowerCase().includes("clock")
+        param.type.toLowerCase().includes("clock") ||
+        param.type.includes("GovernanceCapability") // ← SKIP GovernanceCapability
       ) {
         return;
       }
@@ -531,23 +533,16 @@ function generateExecuteProposalFunction(
         param.type.includes("Capability") ||
         param.type.includes("Cap")
       ) {
-        // Extract the proper reference type '&' or '&mut'
+        // ... rest of the existing logic for other parameters
         const isReference = param.type.includes("&");
         const isMutableRef = param.type.includes("&mut");
-
-        // Extract the type name from the original type
         const typeMatch = param.type.match(/([a-zA-Z0-9_]+)(?:\>|$)/);
         const typeName = typeMatch ? typeMatch[1] : "ObjParam";
 
-        // Create a normalized type signature for deduplication
         let fullTypePath: string;
-
-        // If it already has a full path, use it as is
         if (param.type.includes("::")) {
           fullTypePath = param.type;
-        }
-        // Otherwise, construct the full path
-        else {
+        } else {
           if (isMutableRef) {
             fullTypePath = `&mut ${moduleInfo.packageName}::${exactModuleName}::${typeName}`;
           } else if (isReference) {
@@ -557,26 +552,18 @@ function generateExecuteProposalFunction(
           }
         }
 
-        // Create a unique parameter name
         const baseName = param.name || `${typeName.toLowerCase()}_param`;
         let paramName = baseName;
-
-        // Ensure unique parameter names
         let counter = 1;
         while (additionalObjectParams.some((p) => p.name === paramName)) {
           paramName = `${baseName}_${counter}`;
           counter++;
         }
 
-        // Use a normalized type signature for deduplication check
         const typeSignature = fullTypePath.toLowerCase();
-
-        // Only add if we haven't already added this type
         if (!addedTypeSignatures.has(typeSignature)) {
           addedTypeSignatures.add(typeSignature);
-
           const isOwned = !param.type.includes("&");
-
           additionalObjectParams.push({
             name: paramName,
             type: fullTypePath,
@@ -588,28 +575,28 @@ function generateExecuteProposalFunction(
     });
   });
 
-  // Generate the parameter list for execute_proposal
+  // Generate the parameter list for execute_proposal (NO GovernanceCapability)
   let paramList = [
     "self: &mut GovernanceSystem",
     "proposal_id: ID",
     `app_object: &mut ${moduleInfo.packageName}::${exactModuleName}::${mainStruct}`,
   ];
 
-  // Add additional parameters
+  // Add additional parameters (GovernanceCapability already filtered out)
   additionalObjectParams.forEach((paramInfo) => {
     paramList.push(`${paramInfo.name}: ${paramInfo.type}`);
   });
 
-  // Always add context
   paramList.push("ctx: &mut TxContext");
 
-  // Pass the additional parameters to the execution logic generator
+  // Pass info about GovernanceCapability usage to execution logic generator
   const executionLogic = generateExecutionLogic(
     moduleInfo,
     governableActions,
     exactModuleName,
     mainStruct,
-    additionalObjectParams
+    additionalObjectParams,
+    hasGovernanceCapability // ← Pass this flag
   );
 
   return `public entry fun execute_proposal(
@@ -648,14 +635,14 @@ function generateExecutionLogic(
   governableActions: GovernableAction[],
   exactModuleName: string,
   mainStruct: string,
-  additionalParams: AdditionalParamInfo[] = []
+  additionalParams: AdditionalParamInfo[] = [],
+  hasGovernanceCapability: boolean = false // ← New parameter
 ): string {
-  // Generate execution logic for each governable action
   return `match (&proposal.kind) {
             ${governableActions
               .map((action) => {
-                // Get value parameters to include in the match pattern
                 const valueParams = action.parameters.filter((param) => {
+                  if (!param.type) return false;
                   const type = param.type.toLowerCase();
                   return (
                     !type.includes("txcontext") &&
@@ -669,10 +656,8 @@ function generateExecutionLogic(
                   );
                 });
 
-                // Construct the parameter list for the function call
                 const functionParams: string[] = [];
 
-                // Analyze the parameter order from the function definition
                 action.parameters.forEach((param) => {
                   const paramType = param.type.toLowerCase();
 
@@ -686,6 +671,10 @@ function generateExecutionLogic(
                   ) {
                     functionParams.push("app_object");
                   }
+                  // GovernanceCapability parameter - use stored capability
+                  else if (param.type?.includes("GovernanceCapability")) {
+                    functionParams.push("&self.governance_capability");
+                  }
                   // Value parameters from ProposalKind enum
                   else if (
                     !paramType.includes("&") &&
@@ -694,7 +683,6 @@ function generateExecutionLogic(
                     !paramType.includes("capability") &&
                     !paramType.includes("cap")
                   ) {
-                    // Find the corresponding value parameter
                     const valueParam = valueParams.find(
                       (vp) => vp.name === param.name || vp.type === param.type
                     );
@@ -702,15 +690,15 @@ function generateExecutionLogic(
                       functionParams.push(`*${valueParam.name}`);
                     }
                   }
-                  // Object parameters (non-main)
+                  // Other object parameters
                   else if (
                     (paramType.includes("&") ||
                       paramType.includes("capability") ||
                       paramType.includes("cap")) &&
                     !paramType.includes("txcontext") &&
-                    !paramType.includes("clock")
+                    !paramType.includes("clock") &&
+                    !param.type?.includes("GovernanceCapability") // Exclude GovernanceCapability
                   ) {
-                    // Extract key type information for matching
                     const typeMatch = param.type.match(
                       /([a-zA-Z0-9_]+)(?:\>|$)/
                     );
@@ -718,10 +706,8 @@ function generateExecutionLogic(
                       ? typeMatch[1].toLowerCase()
                       : "";
 
-                    // Try to find a matching parameter
                     const matchingParam = additionalParams.find((ap) => {
                       const apType = ap.type.toLowerCase();
-                      // Match by type name, reference style, or parameter name
                       return (
                         apType.includes(typeName) ||
                         (param.name &&
@@ -737,7 +723,6 @@ function generateExecutionLogic(
                       const passedParam = shouldCopy
                         ? `object::copy(${matchingParam.name})`
                         : matchingParam.name;
-
                       functionParams.push(passedParam);
                     }
                   }
@@ -902,4 +887,15 @@ function generateProposalCreationLogic(
  */
 function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// Helper function to detect GovernanceCapability usage
+function usesGovernanceCapability(
+  governableActions: GovernableAction[]
+): boolean {
+  return governableActions.some((action) =>
+    action.parameters.some((param) =>
+      param.type?.includes("GovernanceCapability")
+    )
+  );
 }

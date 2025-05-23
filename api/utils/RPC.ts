@@ -313,7 +313,7 @@ export class SuiRPC {
               functionName,
               parameters
             );
-
+            
             governableActions.push({
               name: functionName,
               parameters,

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module crowdfund_governance::governance {
-    use std::string::{Self, String};
+    use std::string::{String};
     use sui::table::{Self, Table};
     use sui::tx_context::{sender};
     use sui::vec_map::{Self, VecMap};
@@ -15,6 +15,9 @@ module crowdfund_governance::governance {
     
     // Import the app module being governed
     use crowdfund::Crowdfund;
+
+    // Import the app module being governed AND its capability
+    use crowdfund::Crowdfund::{GovernanceCapability};
     
     /// Error constants
     const EInsufficientVotingPower: u64 = 1;
@@ -56,6 +59,7 @@ module crowdfund_governance::governance {
         admin: address,
         /// Total token supply for quorum calculation
         total_token_supply: u64,
+        governance_capability: GovernanceCapability,
     }
     
     /// Capability for administration
@@ -137,25 +141,31 @@ module crowdfund_governance::governance {
     }
     
     // === Initialize the governance system ===
-    fun init(ctx: &mut TxContext) {
+    public entry fun initialize_governance(
+        governance_cap: GovernanceCapability, // ← Receive capability
+        ctx: &mut TxContext,
+    ) {
         // Create admin capability
         let admin_cap = GovernanceAdminCap {
             id: object::new(ctx),
         };
         
-        // Create and share the GovernanceSystem
-        transfer::share_object(GovernanceSystem {
+        // Create and share the GovernanceSystem WITH capability
+        let governance_system = GovernanceSystem {
             id: object::new(ctx),
             proposals: table::new(ctx),
             next_proposal_id: 0,
             admin: sender(ctx),
-            total_token_supply: 0, // Will be updated by admin
-        });
+            total_token_supply: 0,
+            governance_capability: governance_cap, // ← Store immediately
+        };
+        
+        transfer::share_object(governance_system);
         
         // Transfer admin cap to sender
         transfer::transfer(admin_cap, sender(ctx));
     }
-    
+
     // === Administration functions ===
     
     /// Update the total token supply (for quorum calculations)
@@ -386,7 +396,6 @@ module crowdfund_governance::governance {
         self: &mut GovernanceSystem,
         proposal_id: ID,
         app_object: &mut crowdfund::Crowdfund::Campaign,
-        _governance_cap: &crowdfund::Crowdfund::GovernanceCapability,
         ctx: &mut TxContext
     ) {
         // Ensure proposal exists
@@ -399,7 +408,7 @@ module crowdfund_governance::governance {
         // Execute the proposal based on its kind - SPECIFIC TO THE APP CONTRACT
         match (&proposal.kind) {
             ProposalKind::Transfer_funds { recipient, amount } => {
-                Crowdfund::transfer_funds(app_object, *recipient, *amount, _governance_cap, ctx)
+                Crowdfund::transfer_funds(&self.governance_capability, app_object, *recipient, *amount, ctx)
             }
         };
         
@@ -416,22 +425,7 @@ module crowdfund_governance::governance {
             new_status: PROPOSAL_STATUS_EXECUTED,
         });
     }
-    
-    /// Helper to create a unique key for dynamic fields
-    fun combine_key(id: ID, key: String): vector<u8> {
-        let mut result = object::id_to_bytes(&id);
-        let key_bytes = *string::as_bytes(&key);
         
-        let mut i = 0;
-        let len = vector::length(&key_bytes);
-        while (i < len) {
-            vector::push_back(&mut result, *vector::borrow(&key_bytes, i));
-            i = i + 1;
-        };
-        
-        result
-    }
-    
     // === Getters ===
     
     /// Get the status of a proposal
