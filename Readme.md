@@ -5,6 +5,8 @@ Otter makes it easy for any Sui-based dApp to launch, manage, and scale decentra
 
 ---
 
+> If you are a Sui Overflow Hackathon judge, please do read the detailed Otter pitch [here](./Pitch.md)!
+
 ## 🌊 WHY Otter?
 
 In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. Otter fills that gap by offering:
