@@ -42,7 +42,7 @@ In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. O
     1. Upload your App contract (in move language).
     2. Choose the functions you want to include in the governance contract.
     3. That's it! Our backend will generate a governance contract which you can download and deploy!.
-  - For steps on how to deploy the governance contract follow this [guide](./docs/deploy)
+  - For steps on how to deploy the governance contract follow this [guide](./docs/Deploy.md)
 
 ### WHITELIST GOVERNANCE (/governance/whitelist)
 
@@ -67,7 +67,7 @@ In the ocean of Web3 governance, dApps on Sui lack a native, unified solution. O
 
 ## 📘 Contract Compatibility
 
-Check out the docs for [governance compatibitility](./docs/compatibility)
+Check out the docs for [governance compatibitility](./docs/Compatibility.md)
 
 ---
 
