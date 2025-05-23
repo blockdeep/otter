@@ -1,4 +1,4 @@
-# DAO - ON SUI
+# DAO - ON Sui
 
 ## CONTRACTS
 
@@ -29,7 +29,7 @@ export COUNTER_OBJECT=0xb6d748c59faa061c1f0b452c42ec6632e5426332c1b05e44486f21f2
 2. Initialize Governance System
    Fetch other details from the package. Including ADMIN_CAP_ID and GOVERNANCE_SYSTEM_ID.
 
-For this view all the SUI objects created using `sui client objects`.
+For this view all the Sui objects created using `sui client objects`.
 
 ```bash
 export ADMIN_CAP_ID=0xf5e574cf9d4a66d7c70864b9b75543989b9c049350e97bf7d7a5d4ea6be79e1b

@@ -46,7 +46,7 @@ sui client call \
 
 ### Making a Donation
 
-Donate SUI tokens to a campaign:
+Donate Sui tokens to a campaign:
 
 ```bash
 # Get a coin object to use for donation

@@ -119,7 +119,10 @@ export default function Home() {
                   variant="outline"
                   className="mt-4 border-primary/20 text-primary hover:bg-primary/5"
                 >
+                  <a href="https://github.com/blockdeep/otter/blob/master/Readme.md">
                   Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
+                  
                 </Button>
               </div>
               <div className="flex justify-center">
@@ -172,10 +175,10 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-foreground">
-                  About OTTER
+                  About Otter
                 </h2>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  OTTER is built with a community-first approach to governance
+                  Otter is built with a community-first approach to governance
                   on the Sui blockchain. We believe in creating tools that
                   empower dApps to make decisions collectively and
                   transparently.

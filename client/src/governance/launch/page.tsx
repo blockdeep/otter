@@ -118,7 +118,7 @@ export default function LaunchGovernancePage() {
                   Getting Started
                 </CardTitle>
                 <CardDescription>
-                  Our platform helps you implement governance for your SUI dApp
+                  Our platform helps you implement governance for your Sui dApp
                   without changing your existing contracts
                 </CardDescription>
               </CardHeader>
@@ -698,11 +698,11 @@ export default function LaunchGovernancePage() {
 
                       <div className="space-y-4">
                         <h3 className="text-xl font-bold">
-                          Deploying OTTER Governance on SUI
+                          Deploying Otter Governance on Sui
                         </h3>
                         <p className="text-muted-foreground">
                           This guide walks you through deploying and simulating
-                          a governance flow using OTTER on the Sui blockchain.
+                          a governance flow using Otter on the Sui blockchain.
                         </p>
                         <Alert className="border border-amber-200 bg-amber-50">
                           <AlertCircle className="h-4 w-4 text-amber-500" />
@@ -749,7 +749,7 @@ export default function LaunchGovernancePage() {
                                 {`governance/
 ├── app_folder/                 # App smart contract folder
 ├── sources/                    
-│   ├── governance.move         # governance contract downloaded from OTTER.
+│   ├── governance.move         # governance contract downloaded from Otter.
 │   └── governance_token.move   # governnace token contract downloaded at the same time.
 ├── tests
 └── Move.toml`}</pre>
@@ -790,7 +790,7 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                             <div className="bg-secondary/20 p-4 rounded-md border border-gray-300 shadow-sm font-mono text-sm">
                              <ScrollArea aria-orientation="horizontal" className="h-full w-full"><pre>{`governance/
 ├── sources/                    
-│   ├── governance.move         # governance contract downloaded from OTTER.
+│   ├── governance.move         # governance contract downloaded from Otter.
 │   └── governance_token.move   # governnace token contract downloaded at the same time.
 ├── tests
 └── Move.toml`}</pre>
@@ -984,12 +984,12 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                           <AlertTitle>Good News!</AlertTitle>
                           <AlertDescription>
                             <p>
-                              All of these steps can be done on the OTTER UI
+                              All of these steps can be done on the Otter UI
                               itself!
                             </p>
                             <p className="mt-2">
                               Once deployed, add your governance address to the
-                              OTTER platform using the "Whitelist your
+                              Otter platform using the "Whitelist your
                               governance" button on the Governance page.
                             </p>
                           </AlertDescription>
@@ -1009,10 +1009,10 @@ simple_counter = "0x48e6b4a86510e16891db5663cea0db2b3fa7e4bd3d909d867de39323e633
                             Setup your package structure as described above
                           </li>
                           <li>
-                            Deploy your governance module using the SUI CLI
+                            Deploy your governance module using the Sui CLI
                           </li>
                           <li>
-                            Whitelist your governance on the OTTER platform
+                            Whitelist your governance on the Otter platform
                           </li>
                           <li>
                             Distribute governance tokens to your community

@@ -10,7 +10,7 @@ export function Footer() {
             <a href="/" className="flex items-center gap-2">
               <img
                 src={Logo}
-                alt="OTTER logo"
+                alt="Otter logo"
                 width={100}
                 height={100}
                 className="h-30 w-30"
@@ -49,7 +49,7 @@ export function Footer() {
                 Connect
               </h3>
               <a
-                href="#"
+                href="https://x.com/0xBlockDeep"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 X (formerly Twitter)
@@ -65,11 +65,11 @@ export function Footer() {
         </div>
         <div className="mt-8 flex flex-col-reverse items-center justify-between gap-4 border-t border-border pt-8 md:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} OTTER. All rights reserved.
+            &copy; {new Date().getFullYear()} Otter. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="#"
+              href="https://x.com/0xBlockDeep"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               <X className="h-5 w-5" />

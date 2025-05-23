@@ -7,7 +7,6 @@ import {
   CheckCircle,
   Play,
   Copy,
-  ExternalLink,
   AlertCircle,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router";
@@ -732,7 +731,6 @@ export default function ProposalDetailsPage() {
                   {proposal.description && (
                     <div className="flex flex-col items-start">
                       <div className="flex items-center">
-                        <ExternalLink className="mr-2 h-5 w-5 text-primary" />
                         <p className="text-sm text-muted-foreground">
                           Description Blob ID
                         </p>
