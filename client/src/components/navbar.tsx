@@ -15,12 +15,12 @@ export function Navbar() {
           <a href="/" className="flex items-center gap-2">
             <img
               src={Logo}
-              alt="OTTER Logo"
+              alt="Otter Logo"
               width={24}
               height={24}
               className="h-6 w-6"
             />
-            <span className="text-xl font-bold text-foreground">OTTER</span>
+            <span className="text-xl font-bold text-foreground">Otter</span>
           </a>
         </div>
 
@@ -39,7 +39,7 @@ export function Navbar() {
           </a>
           <a
             target="_blank"
-            href="https://github.com/blockdeep/otter"
+            href="https://github.com/blockdeep/otter/blob/master/Readme.md"
             className="text-sm font-medium text-foreground hover:text-primary transition-colors"
           >
             Docs
@@ -90,13 +90,13 @@ export function Navbar() {
               Governance
             </a>
             <a
-              href="#"
+              href="https://github.com/blockdeep/otter/blob/master/Readme.md"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors"
             >
               Docs
             </a>
             <a
-              href="#"
+              href="about"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors"
             >
               About

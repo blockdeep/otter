@@ -120,7 +120,7 @@ export default function WhiteListGovernancePage() {
               Whitelist Your Governance
             </h1>
             <p className="text-muted-foreground md:text-xl">
-              Register your governance contract to make it available in the OTTER platform
+              Register your governance contract to make it available in the Otter platform
             </p>
           </div>
 
@@ -220,7 +220,7 @@ export default function WhiteListGovernancePage() {
           <div className="mt-12 p-6 bg-muted/30 rounded-lg border border-border">
             <h2 className="font-semibold text-lg mb-4">About Whitelisting</h2>
             <p className="text-muted-foreground mb-4">
-              Whitelisting your governance contract makes it discoverable in the OTTER platform, 
+              Whitelisting your governance contract makes it discoverable in the Otter platform, 
               allowing users to easily find and participate in your governance system.
             </p>
             <p className="text-muted-foreground">

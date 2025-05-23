@@ -93,7 +93,7 @@ const GovernanceFlowChart = () => {
       type: "custom",
       position: { x: 400, y: 0 },
       data: {
-        label: "OTTER Governance",
+        label: "Otter Governance",
         type: "start",
         description: "What would you like to do?",
       },
@@ -233,7 +233,7 @@ const GovernanceFlowChart = () => {
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-foreground">
-              How OTTER Governance Works
+              How Otter Governance Works
             </h2>
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
               Explore the governance flow interactively. Click on any node

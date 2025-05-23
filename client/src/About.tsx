@@ -13,14 +13,14 @@ export default function About() {
             {/* Left: Text Content */}
             <div className="space-y-6">
               <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-primary">
-                Meet OTTER 🦦
+                Meet Otter 🦦
               </h1>
               <p className="text-muted-foreground text-lg md:text-xl max-w-prose">
-                OTTER is a community-first governance framework built for the Sui ecosystem.
+                Otter is a community-first governance framework built for the Sui ecosystem.
                 We help dApps launch and scale decentralized governance — faster, easier, and more transparently.
               </p>
               <p className="text-muted-foreground text-base md:text-lg">
-                From DAOs to DeFi protocols, OTTER empowers your users with real on-chain decision-making.
+                From DAOs to DeFi protocols, Otter empowers your users with real on-chain decision-making.
               </p>
               <Button variant="outline" className="border-primary/20 text-primary hover:bg-primary/5">
                 <a href="/governance/launch">Launch Governance</a>
