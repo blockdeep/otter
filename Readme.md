@@ -1,4 +1,4 @@
-#  Otter — Decentralized Governance on Sui
+#  Otter — Decentralized Governance for Sui
 
 Welcome to **Otter**, the governance framework built on Sui blockchain for the Sui ecosystem.  
 Otter makes it easy for any Sui-based dApp to launch, manage, and scale decentralized governance — no complex setup required.
