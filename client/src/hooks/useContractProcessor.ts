@@ -153,6 +153,9 @@ export function useContractProcessor() {
         governanceTokenContract?: string;
       }>;
 
+      console.log(data);
+      
+
       if (!data.success) {
         throw new Error(
           data.message ||

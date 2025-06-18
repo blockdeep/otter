@@ -187,4 +187,5 @@ export const handleGovernanceObjects = async (
     })
   );
   await Promise.all(promises);
+
 };

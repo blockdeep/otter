@@ -3,29 +3,14 @@
 
 import {
   EventId,
-  SuiClient,
-  SuiEvent,
-  SuiEventFilter,
+  SuiClient
 } from "@mysten/sui/client";
 
 import { CONFIG } from "../config";
 import { prisma } from "../db";
 import { getClient } from "../sui-utils";
 import { handleGovernanceObjects } from "./governance-handler";
-
-type SuiEventsCursor = EventId | null | undefined;
-
-type EventExecutionResult = {
-  cursor: SuiEventsCursor;
-  hasNextPage: boolean;
-};
-
-type EventTracker = {
-  // The module that defines the type, with format `package::module`
-  type: string;
-  filter: SuiEventFilter;
-  callback: (events: SuiEvent[], type: string) => any;
-};
+import { EventExecutionResult, EventTracker, SuiEventsCursor } from "../utils/types";
 
 // Cache to keep track of active trackers
 const activeTrackers: Map<string, { tracker: EventTracker; active: boolean }> =
