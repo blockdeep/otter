@@ -9,8 +9,9 @@ generator client {
 /// For this DEMO, we're using sqlite, which allows us to not
 /// have external dependencies.
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 /// Our `Locked` objects list

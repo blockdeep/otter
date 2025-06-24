@@ -1,5 +1,6 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
+import { capitalizeFirstLetter } from "../utils/utils";
 import { GovernableAction, ParameterInfo } from "./actionIdentifier";
 import { findMainStruct } from "./contractExtractor";
 
@@ -482,9 +483,11 @@ function generateProposalKindEnum(
     })
     .join(",\n");
 
-  return `public enum ProposalKind has drop, store {
-${enumVariants}
-    }`;
+  return `// BEGIN GENERATED: ProposalKind
+  public enum ProposalKind has drop, store {
+  ${enumVariants}
+      }
+  // END GENERATED: ProposalKind`;
 }
 
 /**
@@ -599,7 +602,8 @@ function generateExecuteProposalFunction(
     hasGovernanceCapability // ← Pass this flag
   );
 
-  return `public entry fun execute_proposal(
+  return `// BEGIN GENERATED: execute_proposal
+    public entry fun execute_proposal(
         ${paramList.join(",\n        ")}
     ) {
         // Ensure proposal exists
@@ -624,7 +628,8 @@ function generateExecuteProposalFunction(
             proposal_id,
             new_status: PROPOSAL_STATUS_EXECUTED,
         });
-    }`;
+    }
+    // END GENERATED: execute_proposal`;
 }
 
 /**
@@ -659,6 +664,8 @@ function generateExecutionLogic(
                 const functionParams: string[] = [];
 
                 action.parameters.forEach((param) => {
+                  console.log(param);
+                  
                   const paramType = param.type.toLowerCase();
 
                   // Main struct parameter
@@ -788,7 +795,8 @@ function generateProposalCreationLogic(
     .map(([name, type]) => `${name}: ${type}`)
     .join(",\n        ");
 
-  return `public entry fun create_proposal(
+  return `// BEGIN GENERATED: create_proposal
+        public entry fun create_proposal(
         self: &mut GovernanceSystem,
         governance_coins: &Coin<GOVTOKEN>,
         title: String,
@@ -879,14 +887,8 @@ function generateProposalCreationLogic(
         });
         
         proposal_id
-    }`;
-}
-
-/**
- * Capitalize the first letter of a string
- */
-function capitalizeFirstLetter(string: string): string {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    // END GENERATED: create_proposal`;
 }
 
 // Helper function to detect GovernanceCapability usage

@@ -29,13 +29,14 @@ export function identifyAllPotentialActions(
 
   // Look for all public entry functions
   const functionRegex =
-    /public\s+(entry\s+)?fun\s+([a-zA-Z0-9_]+)\s*\(([\s\S]*?)\)/g;
+    /public\s+(entry\s+)?fun\s+([a-zA-Z0-9_]+)\s*(<[^>]*>)?\s*\(([\s\S]*?)\)/g;
+
 
   let match;
   while ((match = functionRegex.exec(contractCode)) !== null) {
     const isEntry = match[1] !== undefined; // Check if function has 'entry' modifier
     const functionName = match[2];
-    const parametersRaw = match[3];
+    const parametersRaw = match[4];
 
     console.log(functionName, isEntry);
 
@@ -67,20 +68,13 @@ export function identifyGovernableActions(
 
   // Look for public | entry functions
   const functionRegex =
-    /public\s+(entry\s+)?fun\s+([a-zA-Z0-9_]+)\s*\(([\s\S]*?)\)/g;
+    /public\s+(entry\s+)?fun\s+([a-zA-Z0-9_]+)\s*(<[^>]*>)?\s*\(([\s\S]*?)\)/g;
+
 
   let match;
   while ((match = functionRegex.exec(contractCode)) !== null) {
     const functionName = match[2];
-    const parametersRaw = match[3];
-
-    if (
-      functionName.startsWith("get_") ||
-      functionName.startsWith("is_") ||
-      functionName.startsWith("has_")
-    ) {
-      continue;
-    }
+    const parametersRaw = match[4];
 
     // Parse parameters
     const parameters = parseParameters(parametersRaw);
@@ -113,13 +107,42 @@ export function identifyGovernableActions(
  * Parse parameters from a parameter string
  */
 export function parseParameters(parametersRaw: string): ParameterInfo[] {
+  console.log(parametersRaw);
+  
   if (!parametersRaw.trim()) return [];
 
-  const paramList = parametersRaw.split(",").map((p) => p.trim());
-  return paramList.map((param) => {
-    const [name, type] = param.split(":").map((p) => p.trim());
-    return { name, type };
-  });
+  const rawParams: string[] = [];
+  let current = "";
+  let depth = 0;
+
+  for (let i = 0; i < parametersRaw.length; i++) {
+    const char = parametersRaw[i];
+
+    if (char === "<") {
+      depth++;
+    } else if (char === ">") {
+      depth--;
+    }
+
+    if (char === "," && depth === 0) {
+      rawParams.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) {
+    rawParams.push(current.trim());
+  }
+
+  return rawParams
+    .map((param) => {
+      const [name, type] = param.split(":").map((p) => p.trim());
+      if (!name || !type) return null;
+      return { name, type };
+    })
+    .filter((p): p is ParameterInfo => p !== null);
 }
 
 /**
@@ -286,6 +309,15 @@ export function isFunctionGovernable(
   );
   const functionBodyMatch = contractCode.match(functionBodyRegex);
   const functionBody = functionBodyMatch ? functionBodyMatch[1] : "";
+
+  // If it's an entry function and not a getter/query, allow it even if it’s a stub
+  if (
+    isEntryFunction &&
+    !functionName.startsWith("get_") &&
+    !functionName.startsWith("is_")
+  ) {
+    return true;
+  }
 
   const hasStateModification =
     functionBody.includes(".") || // Field access
